@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Contact — Nuvamin</title>
+<meta name="description" content="Contact Nuvamin — questions about formulas, orders, certificates, or wholesale.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230D0D0D'/%3E%3Ctext x='16' y='22' text-anchor='middle' font-family='Arial' font-size='17' fill='%23F2F2F0'%3EN%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body data-page="contact">
+
+<header class="site-header"></header>
+
+<section class="page-hero">
+  <div class="wrap">
+    <p class="kicker">Contact</p>
+    <h1 class="h-display h-xl">Ask us<br>anything</h1>
+    <p class="lede">Formulation questions get answered by the people who wrote the formulas. Order questions get answered fast. Either way, a human reads it.</p>
+  </div>
+</section>
+
+<section class="section" style="padding-top:0">
+  <div class="wrap contact-layout">
+    <form class="cform reveal" data-contact>
+      <label>
+        <span class="lbl">Name</span>
+        <input type="text" name="name" required autocomplete="name">
+      </label>
+      <label>
+        <span class="lbl">Email</span>
+        <input type="email" name="email" required autocomplete="email">
+      </label>
+      <label>
+        <span class="lbl">Topic</span>
+        <select name="topic">
+          <option>A formula or ingredient</option>
+          <option>An order</option>
+          <option>A batch certificate</option>
+          <option>Wholesale / practitioners</option>
+          <option>Something else</option>
+        </select>
+      </label>
+      <label>
+        <span class="lbl">Message</span>
+        <textarea name="message" required></textarea>
+      </label>
+      <button class="btn" type="submit">Send message <span class="arr">&rarr;</span></button>
+    </form>
+
+    <div class="contact-cards reveal" style="--d:120ms" id="faq">
+      <div class="contact-card">
+        <h3>Email</h3>
+        <p><a href="mailto:hello@nuvamin.com">hello@nuvamin.com</a> &mdash; replies within two working days.</p>
+      </div>
+      <div class="contact-card">
+        <h3>Studio</h3>
+        <p>Nuvamin ApS<br>Refshalevej 167A<br>1432 Copenhagen K, Denmark</p>
+      </div>
+      <div class="contact-card">
+        <h3>Shipping</h3>
+        <p>Dispatched within 24 hours, Monday&ndash;Friday. Free EU shipping over &euro;60. Worldwide from &euro;9.</p>
+      </div>
+      <div class="contact-card">
+        <h3>Returns</h3>
+        <p>30 days, no interrogation. Opened products included &mdash; if it wasn&rsquo;t for you, that&rsquo;s reason enough.</p>
+      </div>
+      <div class="contact-card">
+        <h3>Certificates</h3>
+        <p>Batch certificates ship in every box. Need a copy? Send your batch number and we&rsquo;ll return the PDF.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="site-footer"></footer>
+
+<script src="assets/js/products.js"></script>
+<script src="assets/js/main.js"></script>
+</body>
+</html>

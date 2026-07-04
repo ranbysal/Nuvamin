@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shop — Nuvamin</title>
+<meta name="description" content="The full Nuvamin range: foundation, cognition, recovery and performance formulas. Evidence-led, third-party verified.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230D0D0D'/%3E%3Ctext x='16' y='22' text-anchor='middle' font-family='Arial' font-size='17' fill='%23F2F2F0'%3EN%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body data-page="shop">
+
+<header class="site-header"></header>
+
+<section class="page-hero">
+  <div class="wrap">
+    <p class="kicker">The range</p>
+    <h1 class="h-display h-xl">All products</h1>
+    <p class="lede">Eight formulas. No line extensions, no seasonal flavours, no filler SKUs. When the evidence changes, the formula changes &mdash; and we tell you why.</p>
+  </div>
+</section>
+
+<section class="section" style="padding-top:0">
+  <div class="wrap">
+    <div class="shop-toolbar">
+      <div class="filters" role="tablist" aria-label="Filter by category">
+        <button class="fbtn active" data-filter="all">All</button>
+        <button class="fbtn" data-filter="Foundation">Foundation</button>
+        <button class="fbtn" data-filter="Cognition">Cognition</button>
+        <button class="fbtn" data-filter="Recovery">Recovery</button>
+        <button class="fbtn" data-filter="Performance">Performance</button>
+        <button class="fbtn" data-filter="Longevity">Longevity</button>
+      </div>
+      <span class="shop-count" id="shop-count"></span>
+    </div>
+    <div class="pgrid" id="shop-grid"></div>
+  </div>
+</section>
+
+<section class="section dark-band">
+  <div class="wrap" style="text-align:center">
+    <p class="kicker no-rule" style="justify-content:center">Not sure where to start?</p>
+    <h2 class="h-display h-lg" style="margin:20px 0 28px">Start with the<br><span class="serif-note" style="color:#819FA7">foundation.</span></h2>
+    <p class="lede" style="margin:0 auto 36px">Daily Core and Omega Prime cover the gaps almost every diet leaves. Everything else is refinement.</p>
+    <a class="btn btn-ghost" href="product.html?id=daily-core">Shop Daily Core <span class="arr">&rarr;</span></a>
+  </div>
+</section>
+
+<footer class="site-footer"></footer>
+
+<script src="assets/js/products.js"></script>
+<script src="assets/js/main.js"></script>
+<script>
+  (function () {
+    var grid = document.getElementById("shop-grid");
+    var count = document.getElementById("shop-count");
+
+    function render(filter) {
+      var list = NV_PRODUCTS.filter(function (p) {
+        return filter === "all" || p.category === filter;
+      });
+      grid.innerHTML = list.map(function (p, i) { return nvProductCard(p, i); }).join("");
+      count.textContent = list.length + (list.length === 1 ? " formula" : " formulas");
+      nvWatchReveals();
+    }
+
+    document.querySelectorAll(".fbtn").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        document.querySelectorAll(".fbtn").forEach(function (b) { b.classList.remove("active"); });
+        btn.classList.add("active");
+        render(btn.getAttribute("data-filter"));
+      });
+    });
+
+    var hash = (location.hash || "").replace("#", "");
+    var map = { foundation: "Foundation", cognition: "Cognition", recovery: "Recovery", performance: "Performance", longevity: "Longevity" };
+    if (map[hash]) {
+      var target = document.querySelector('.fbtn[data-filter="' + map[hash] + '"]');
+      if (target) { target.click(); } else { render("all"); }
+    } else {
+      render("all");
+    }
+  })();
+</script>
+</body>
+</html>

@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Product — Nuvamin</title>
+<meta name="description" content="Nuvamin product detail — full formula transparency, doses, and third-party testing.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230D0D0D'/%3E%3Ctext x='16' y='22' text-anchor='middle' font-family='Arial' font-size='17' fill='%23F2F2F0'%3EN%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body data-page="shop">
+
+<header class="site-header"></header>
+
+<section class="pdp" id="pdp"></section>
+
+<section class="section related">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <div>
+        <p class="kicker">Pairs well with</p>
+        <h2 class="h-display h-md">Complete the routine</h2>
+      </div>
+      <a class="section-link" href="shop.html">View all</a>
+    </div>
+    <div class="pgrid cols-3" id="related-grid"></div>
+  </div>
+</section>
+
+<footer class="site-footer"></footer>
+
+<script src="assets/js/products.js"></script>
+<script src="assets/js/main.js"></script>
+<script>
+  (function () {
+    var params = new URLSearchParams(location.search);
+    var p = nvFindProduct(params.get("id")) || NV_PRODUCTS[0];
+    document.title = p.name + " — Nuvamin";
+
+    var qty = 1;
+
+    var ingredientRows = p.ingredients.map(function (ing) {
+      return "<tr><td>" + ing.name + '<span class="dose">' + ing.dose + "</span></td><td>" + ing.note + "</td></tr>";
+    }).join("");
+
+    var benefits = p.benefits.map(function (b) { return "<li>" + b + "</li>"; }).join("");
+
+    document.getElementById("pdp").innerHTML =
+      '<div class="pdp-media-col" style="background:' + p.panel + '"><div class="pdp-media">' + nvBottleSVG(p, { large: true }) + "</div></div>" +
+      '<div class="pdp-info">' +
+      '<p class="pdp-cat">' + p.category + " &mdash; " + p.form + "</p>" +
+      '<h1 class="h-display pdp-title">' + p.name + "</h1>" +
+      '<p class="pdp-sub">' + p.sub + "</p>" +
+      '<p class="pdp-price">&euro;' + p.price + '</p>' +
+      '<p class="pdp-form">' + p.dose + "</p>" +
+      '<p class="pdp-blurb">' + p.blurb + "</p>" +
+      '<ul class="pdp-benefits">' + benefits + "</ul>" +
+      '<div class="pdp-buy">' +
+      '<div class="qty"><button type="button" data-q="-1" aria-label="Decrease quantity">&minus;</button><output id="qty-out">1</output><button type="button" data-q="1" aria-label="Increase quantity">+</button></div>' +
+      '<button class="btn" id="pdp-add">Add to cart &mdash; &euro;<span id="pdp-total">' + p.price + "</span></button>" +
+      "</div>" +
+      '<p class="pdp-ship"><span>Free shipping over &euro;60</span><span>30-day returns</span><span>Batch certificate included</span></p>' +
+      '<div class="acc">' +
+      '<div class="acc-item"><button class="acc-btn" aria-expanded="false">Full formula <span class="acc-x">+</span></button><div class="acc-panel"><div class="acc-body"><table>' + ingredientRows + "</table></div></div></div>" +
+      '<div class="acc-item"><button class="acc-btn" aria-expanded="false">How to take <span class="acc-x">+</span></button><div class="acc-panel"><div class="acc-body"><p>' + p.dose + ". Consistency beats timing: pick a moment you will not skip and anchor it there. Pairs with food unless noted otherwise.</p></div></div></div>" +
+      '<div class="acc-item"><button class="acc-btn" aria-expanded="false">Testing &amp; certificates <span class="acc-x">+</span></button><div class="acc-panel"><div class="acc-body"><p>Every batch of ' + p.name + " is tested by an independent ISO 17025 laboratory for identity, potency, heavy metals (Pb, As, Cd, Hg) and microbiology. The certificate for your batch ships in the box and is archived online for five years.</p></div></div></div>" +
+      '<div class="acc-item"><button class="acc-btn" aria-expanded="false">Shipping &amp; returns <span class="acc-x">+</span></button><div class="acc-panel"><div class="acc-body"><p>Dispatched within 24 hours, Monday to Friday. Free EU shipping over &euro;60. Unopened products can be returned within 30 days &mdash; opened ones too, if it simply was not for you.</p></div></div></div>' +
+      "</div></div>";
+
+    function syncQty() {
+      document.getElementById("qty-out").textContent = qty;
+      document.getElementById("pdp-total").textContent = p.price * qty;
+    }
+    document.querySelectorAll("[data-q]").forEach(function (b) {
+      b.addEventListener("click", function () {
+        qty = Math.max(1, qty + parseInt(b.getAttribute("data-q"), 10));
+        syncQty();
+      });
+    });
+    document.getElementById("pdp-add").addEventListener("click", function () {
+      nvCart.add(p.id, qty);
+    });
+
+    /* related: same category first, then the rest */
+    var related = NV_PRODUCTS.filter(function (x) { return x.id !== p.id; })
+      .sort(function (a, b) {
+        return (b.category === p.category) - (a.category === p.category);
+      })
+      .slice(0, 3);
+    document.getElementById("related-grid").innerHTML =
+      related.map(function (x, i) { return nvProductCard(x, i); }).join("");
+    nvWatchReveals();
+  })();
+</script>
+</body>
+</html>

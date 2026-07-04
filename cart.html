@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cart — Nuvamin</title>
+<meta name="description" content="Your Nuvamin cart.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230D0D0D'/%3E%3Ctext x='16' y='22' text-anchor='middle' font-family='Arial' font-size='17' fill='%23F2F2F0'%3EN%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body data-page="cart">
+
+<header class="site-header"></header>
+
+<section class="page-hero">
+  <div class="wrap">
+    <p class="kicker">Your order</p>
+    <h1 class="h-display h-xl">Cart</h1>
+  </div>
+</section>
+
+<section class="section" style="padding-top:0">
+  <div class="wrap" id="cart-root"></div>
+</section>
+
+<footer class="site-footer"></footer>
+
+<script src="assets/js/products.js"></script>
+<script src="assets/js/main.js"></script>
+<script>
+  (function () {
+    var root = document.getElementById("cart-root");
+    var FREE_SHIP = 60, SHIP = 6;
+
+    function render() {
+      var cart = nvCart.read();
+      var ids = Object.keys(cart).filter(function (id) { return nvFindProduct(id); });
+
+      if (!ids.length) {
+        root.innerHTML =
+          '<div class="cart-empty">' +
+          "<p>Your cart is empty &mdash; a state of great potential.</p>" +
+          '<a class="btn" href="shop.html">Browse the range <span class="arr">&rarr;</span></a>' +
+          "</div>";
+        return;
+      }
+
+      var subtotal = 0;
+      var lines = ids.map(function (id) {
+        var p = nvFindProduct(id), q = cart[id];
+        subtotal += p.price * q;
+        return (
+          '<div class="cart-line">' +
+          '<a class="cart-thumb" href="product.html?id=' + p.id + '" style="background:' + p.panel + '">' + nvBottleSVG(p) + "</a>" +
+          "<div><h3>" + p.name + '</h3><p class="sub">' + p.sub + " &middot; " + p.form + '</p>' +
+          '<button class="remove" data-remove="' + p.id + '">Remove</button></div>' +
+          '<div class="qty"><button data-dec="' + p.id + '" aria-label="Decrease">&minus;</button><output>' + q + '</output><button data-inc="' + p.id + '" aria-label="Increase">+</button></div>' +
+          '<span class="cart-line-price">&euro;' + p.price * q + "</span>" +
+          "</div>"
+        );
+      }).join("");
+
+      var shipping = subtotal >= FREE_SHIP ? 0 : SHIP;
+      var shipLabel = shipping === 0 ? "Free" : "&euro;" + shipping;
+      var toFree = subtotal >= FREE_SHIP
+        ? "You have free shipping."
+        : "&euro;" + (FREE_SHIP - subtotal) + " away from free shipping.";
+
+      root.innerHTML =
+        '<div class="cart-layout">' +
+        '<div class="cart-lines">' + lines + "</div>" +
+        '<aside class="cart-summary"><h2>Summary</h2>' +
+        '<div class="sum-row"><span>Subtotal</span><span>&euro;' + subtotal + "</span></div>" +
+        '<div class="sum-row"><span>Shipping</span><span>' + shipLabel + "</span></div>" +
+        '<div class="sum-row"><span style="font-family:var(--serif);font-style:italic">' + toFree + "</span></div>" +
+        '<div class="sum-row total"><span>Total</span><span>&euro;' + (subtotal + shipping) + "</span></div>" +
+        '<button class="btn" id="checkout">Checkout <span class="arr">&rarr;</span></button>' +
+        '<p style="margin-top:16px;font-size:11.5px;color:var(--ink-40)">Batch certificates included with every order. 30-day returns.</p>' +
+        "</aside></div>";
+    }
+
+    root.addEventListener("click", function (e) {
+      var t = e.target;
+      var cart = nvCart.read();
+      if (t.hasAttribute("data-remove")) { nvCart.set(t.getAttribute("data-remove"), 0); render(); }
+      else if (t.hasAttribute("data-inc")) { var a = t.getAttribute("data-inc"); nvCart.set(a, (cart[a] || 0) + 1); render(); }
+      else if (t.hasAttribute("data-dec")) { var b = t.getAttribute("data-dec"); nvCart.set(b, (cart[b] || 0) - 1); render(); }
+      else if (t.closest && t.closest("#checkout")) { nvToast("Checkout is not wired up yet — this is a demo storefront"); }
+    });
+
+    render();
+  })();
+</script>
+</body>
+</html>
