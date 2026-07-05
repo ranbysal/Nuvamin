@@ -11,8 +11,8 @@ const NV_PRODUCTS = [
     form: "60 capsules",
     dose: "2 capsules, morning",
     price: 42,
-    accent: "#819FA7",
-    panel: "#E7ECEF",
+    accent: "#B25B32",
+    panel: "#EDE5DA",
     jar: false,
     blurb:
       "One formula for the nutrients most diets under-deliver. Bioavailable forms, meaningful doses, nothing ornamental.",
@@ -32,8 +32,8 @@ const NV_PRODUCTS = [
     form: "90 softgels",
     dose: "2 softgels with food",
     price: 38,
-    accent: "#5B6E74",
-    panel: "#E9EBE7",
+    accent: "#55524B",
+    panel: "#E7E4DC",
     jar: false,
     blurb:
       "Cold-processed marine lipids in the rTG form your body actually recognises. IFOS five-star certified, every batch.",
@@ -52,8 +52,8 @@ const NV_PRODUCTS = [
     form: "90 capsules",
     dose: "3 capsules, 1 hour before bed",
     price: 34,
-    accent: "#3A474C",
-    panel: "#E4E8EC",
+    accent: "#2B2A27",
+    panel: "#E1DFD9",
     jar: false,
     blurb:
       "A quiet formula for the end of the day. Magnesium in its gentlest form, with apigenin and glycine to help you wind down.",
@@ -72,8 +72,8 @@ const NV_PRODUCTS = [
     form: "60 capsules",
     dose: "2 capsules, as needed",
     price: 44,
-    accent: "#A7B8BC",
-    panel: "#EDF0F2",
+    accent: "#B8B5AC",
+    panel: "#EFECE3",
     jar: false,
     blurb:
       "Clean attention without the edge. Citicoline for the machinery, theanine to keep it smooth. No stimulants, no crash.",
@@ -92,8 +92,8 @@ const NV_PRODUCTS = [
     form: "120 capsules",
     dose: "1 capsule with a meal",
     price: 28,
-    accent: "#B8B29E",
-    panel: "#EFEDE6",
+    accent: "#BFA778",
+    panel: "#F0EAD9",
     jar: false,
     blurb:
       "Vitamin D moves calcium; K2 tells it where to go. Two nutrients that were always meant to travel together.",
@@ -112,8 +112,8 @@ const NV_PRODUCTS = [
     form: "300 g powder",
     dose: "1 scoop (10 g), any time",
     price: 48,
-    accent: "#C9C2B2",
-    panel: "#F0EEE7",
+    accent: "#CBC3AE",
+    panel: "#F1EEE4",
     jar: true,
     blurb:
       "Type I marine collagen, hydrolysed to peptides small enough to matter. Dissolves clear, tastes of nothing.",
@@ -131,8 +131,8 @@ const NV_PRODUCTS = [
     form: "300 g powder",
     dose: "1 scoop (5 g), daily",
     price: 32,
-    accent: "#8FA09B",
-    panel: "#E8ECE9",
+    accent: "#7B7E67",
+    panel: "#E9E7DB",
     jar: true,
     blurb:
       "The most studied molecule in sports nutrition, from the only source we'd put our name on. Micronised, single-ingredient.",
@@ -149,8 +149,8 @@ const NV_PRODUCTS = [
     form: "30 capsules",
     dose: "1 capsule, with breakfast",
     price: 46,
-    accent: "#7E8D8A",
-    panel: "#E9ECE8",
+    accent: "#8A8874",
+    panel: "#EAE7DC",
     jar: false,
     blurb:
       "Twelve strains selected for published human data, in delayed-release capsules that get them where they're going.",
@@ -167,7 +167,7 @@ const NV_PRODUCTS = [
 function nvBottleSVG(p, opts) {
   opts = opts || {};
   var scale = opts.large ? 1 : 1;
-  var a = p.accent, ink = "#0D0D0D", cream = "#FAFAF7";
+  var a = p.accent, ink = "#0D0D0D", cream = "#F5F3ED";
   if (p.jar) {
     return (
       '<svg viewBox="0 0 300 380" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="' + p.name + ' jar render">' +

@@ -31,4 +31,4 @@ Product data lives in `assets/js/products.js`; shared behaviour (header/footer
 partials, cart store, scroll reveals, accordions) in `assets/js/main.js`;
 all styling in `assets/css/style.css`.
 
-Palette: `#F3F5F9` · `#819FA7` · `#5B6E74` · `#F2F2F0` · `#0D0D0D`
+Palette: `#DFDCD5` · `#B25B32` · `#55524B` · `#E9E6E0` · `#0D0D0D`
