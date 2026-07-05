@@ -46,7 +46,7 @@
     var research = p.research.map(function (b) { return "<li>" + b + "</li>"; }).join("");
 
     document.getElementById("pdp").innerHTML =
-      '<div class="pdp-media-col" style="background:' + p.panel + '"><div class="pdp-media">' + nvVialSVG(p) + "</div></div>" +
+      '<div class="pdp-media-col" style="background:' + p.panel + '"><div class="pdp-media">' + nvProductImg(p) + "</div></div>" +
       '<div class="pdp-info">' +
       '<p class="pdp-cat">' + p.category + " &mdash; " + p.mg + " &middot; " + p.form + "</p>" +
       '<h1 class="h-display pdp-title">' + p.name + "</h1>" +

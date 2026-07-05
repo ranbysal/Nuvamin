@@ -296,9 +296,9 @@
 <script src="assets/js/main.js"></script>
 <script>
   (function () {
-    document.getElementById("hero-render").innerHTML = nvVialSVG(nvFindProduct("retatrutide"));
+    document.getElementById("hero-render").innerHTML = nvProductImg(nvFindProduct("retatrutide"));
     var grid = document.getElementById("featured-grid");
-    grid.innerHTML = NV_PRODUCTS.map(function (p, i) {
+    grid.innerHTML = NV_PRODUCTS.slice(0, 4).map(function (p, i) {
       return nvProductCard(p, i);
     }).join("");
     nvWatchReveals();

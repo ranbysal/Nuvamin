@@ -272,11 +272,11 @@ body.hero-go .hero-scan { animation: heroScan 1.7s 0.3s var(--ease) forwards; }
 }
 body.hero-go .hero-render { animation: heroRise 1.5s 0.5s var(--ease) forwards; }
 @keyframes heroRise { to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); } }
-.hero-render svg {
+.hero-render svg, .hero-render img {
   width: 100%; height: auto;
-  filter: drop-shadow(0 34px 44px rgba(0, 0, 0, 0.14));
   animation: heroFloat 7s ease-in-out 2.1s infinite;
 }
+.hero-render img { mix-blend-mode: multiply; }
 @keyframes heroFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
 
 /* hero supporting elements resolve after the wordmark */
@@ -362,14 +362,15 @@ body.hero-go .hero-baseline { animation: heroFadeUp 1s 1.25s var(--ease) forward
 }
 .pcard-render {
   position: absolute;
-  inset: 12% 18% 6%;
+  inset: 6% 8% 4%;
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: center;
   transition: transform 0.7s var(--ease);
 }
 .pcard-render svg { width: 100%; height: 100%; }
-.pcard-media:hover .pcard-render { transform: translateY(-10px) scale(1.025); }
+.pcard-render img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; }
+.pcard-media:hover .pcard-render { transform: translateY(-10px) scale(1.03); }
 .pcard-tag {
   position: absolute;
   top: 14px; left: 14px;
@@ -665,7 +666,8 @@ body.hero-go .hero-baseline { animation: heroFadeUp 1s 1.25s var(--ease) forward
   justify-content: center;
   padding: clamp(48px, 8vw, 120px);
 }
-.pdp-media svg { width: min(100%, 420px); height: auto; filter: drop-shadow(0 30px 40px rgba(13,13,13,0.10)); }
+.pdp-media svg { width: min(100%, 420px); height: auto; filter: drop-shadow(0 30px 40px rgba(0,0,0,0.10)); }
+.pdp-media img { width: min(100%, 460px); height: auto; mix-blend-mode: multiply; }
 .pdp-info { padding: calc(72px + clamp(32px, 5vw, 72px)) var(--gutter) clamp(56px, 6vw, 96px) clamp(32px, 5vw, 88px); max-width: 640px; }
 .pdp-cat { font-family: var(--display); font-size: 10.5px; letter-spacing: 0.24em; text-transform: uppercase; color: var(--ink-60); }
 .pdp-title { font-size: clamp(38px, 4.4vw, 68px); margin: 14px 0 6px; }
@@ -729,6 +731,7 @@ body.hero-go .hero-baseline { animation: heroFadeUp 1s 1.25s var(--ease) forward
   border-bottom: 1px solid var(--line);
 }
 .cart-thumb { background: var(--mist); padding: 8px; }
+.cart-thumb img { mix-blend-mode: multiply; }
 .cart-line h3 { font-family: var(--display); font-size: 15px; font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase; }
 .cart-line .sub { font-size: 12.5px; color: var(--ink-60); }
 .cart-line .remove { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; font-family: var(--display); color: var(--ink-40); margin-top: 8px; }
@@ -852,7 +855,7 @@ body.page-out { opacity: 0; transition: opacity 0.24s ease; }
     animation: none !important; transform: none !important; opacity: 1 !important; filter: none !important;
   }
   .hero-scan { opacity: 0 !important; }
-  .hero-render svg { animation: none !important; }
+  .hero-render svg, .hero-render img { animation: none !important; }
   .marquee-track { animation: none; }
   body { animation: none; }
   html { scroll-behavior: auto; }
