@@ -226,23 +226,29 @@ body.hero-go .hero-word .hl {
   55%  { opacity: 1; filter: blur(0); }
   100% { opacity: 1; transform: translate3d(0, 0, 0) scale(1); filter: blur(0); }
 }
-/* calibration scan sweeping across the hero as letters resolve */
-.hero-scan {
+/* converging hairlines — mirror the letters' inward assembly, meet, then dissolve */
+.hero-word { position: relative; }
+.hero-word::before, .hero-word::after {
+  content: "";
   position: absolute;
-  top: 0; bottom: 0; left: 0;
-  width: 180px;
-  pointer-events: none;
-  z-index: 3;
+  top: 55%;
+  width: 50%;
+  height: 1px;
+  background: var(--blue);
   opacity: 0;
-  transform: translateX(-220px);
-  background: linear-gradient(90deg, transparent, rgba(120, 144, 156, 0.22), rgba(120, 144, 156, 0.06), transparent);
+  transform: scaleX(0);
+  pointer-events: none;
+  z-index: -1;
 }
-body.hero-go .hero-scan { animation: heroScan 1.7s 0.3s var(--ease) forwards; }
-@keyframes heroScan {
-  0%   { transform: translateX(-220px); opacity: 0; }
-  12%  { opacity: 1; }
-  88%  { opacity: 1; }
-  100% { transform: translateX(102vw); opacity: 0; }
+.hero-word::before { left: 0; transform-origin: left center; }
+.hero-word::after { right: 0; transform-origin: right center; }
+body.hero-go .hero-word::before,
+body.hero-go .hero-word::after { animation: lineConverge 1.5s 0.1s var(--ease) forwards; }
+@keyframes lineConverge {
+  0%   { transform: scaleX(0); opacity: 0; }
+  18%  { opacity: 0.9; }
+  62%  { transform: scaleX(1); opacity: 0.9; }
+  100% { transform: scaleX(1); opacity: 0; }
 }
 
 .hero-stage {
@@ -276,7 +282,7 @@ body.hero-go .hero-render { animation: heroRise 1.5s 0.5s var(--ease) forwards; 
   width: 100%; height: auto;
   animation: heroFloat 7s ease-in-out 2.1s infinite;
 }
-.hero-render img { mix-blend-mode: multiply; }
+.hero-render img { filter: drop-shadow(0 42px 34px rgba(0, 0, 0, 0.16)); }
 @keyframes heroFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
 
 /* hero supporting elements resolve after the wordmark */
@@ -369,8 +375,14 @@ body.hero-go .hero-baseline { animation: heroFadeUp 1s 1.25s var(--ease) forward
   transition: transform 0.7s var(--ease);
 }
 .pcard-render svg { width: 100%; height: 100%; }
-.pcard-render img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; }
+.pcard-render img {
+  width: 100%; height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 16px 16px rgba(0, 0, 0, 0.12));
+  transition: filter 0.7s var(--ease);
+}
 .pcard-media:hover .pcard-render { transform: translateY(-10px) scale(1.03); }
+.pcard-media:hover .pcard-render img { filter: drop-shadow(0 30px 26px rgba(0, 0, 0, 0.18)); }
 .pcard-tag {
   position: absolute;
   top: 14px; left: 14px;
@@ -667,7 +679,7 @@ body.hero-go .hero-baseline { animation: heroFadeUp 1s 1.25s var(--ease) forward
   padding: clamp(48px, 8vw, 120px);
 }
 .pdp-media svg { width: min(100%, 420px); height: auto; filter: drop-shadow(0 30px 40px rgba(0,0,0,0.10)); }
-.pdp-media img { width: min(100%, 460px); height: auto; mix-blend-mode: multiply; }
+.pdp-media img { width: min(100%, 460px); height: auto; filter: drop-shadow(0 36px 34px rgba(0, 0, 0, 0.14)); }
 .pdp-info { padding: calc(72px + clamp(32px, 5vw, 72px)) var(--gutter) clamp(56px, 6vw, 96px) clamp(32px, 5vw, 88px); max-width: 640px; }
 .pdp-cat { font-family: var(--display); font-size: 10.5px; letter-spacing: 0.24em; text-transform: uppercase; color: var(--ink-60); }
 .pdp-title { font-size: clamp(38px, 4.4vw, 68px); margin: 14px 0 6px; }
@@ -731,7 +743,7 @@ body.hero-go .hero-baseline { animation: heroFadeUp 1s 1.25s var(--ease) forward
   border-bottom: 1px solid var(--line);
 }
 .cart-thumb { background: var(--mist); padding: 8px; }
-.cart-thumb img { mix-blend-mode: multiply; }
+.cart-thumb img { filter: drop-shadow(0 5px 6px rgba(0, 0, 0, 0.12)); }
 .cart-line h3 { font-family: var(--display); font-size: 15px; font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase; }
 .cart-line .sub { font-size: 12.5px; color: var(--ink-60); }
 .cart-line .remove { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; font-family: var(--display); color: var(--ink-40); margin-top: 8px; }
@@ -843,6 +855,32 @@ body.hero-go .hero-baseline { animation: heroFadeUp 1s 1.25s var(--ease) forward
   pointer-events: none;
 }
 
+/* ---------- ambient product drift (faint, behind hero content) ---------- */
+
+.page-hero { position: relative; overflow: hidden; }
+.hero > :not(.ambient), .page-hero > :not(.ambient) { position: relative; z-index: 1; }
+.ambient {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 2.4s ease 1.3s;
+}
+body.hero-go .ambient { opacity: 1; }
+.ambient img {
+  position: absolute;
+  opacity: 0.05;
+  filter: grayscale(1) blur(2px);
+  will-change: transform;
+}
+.amb-1 { width: clamp(220px, 30vw, 520px); left: -8vw; top: 4%; animation: ambA 84s ease-in-out infinite alternate; }
+.amb-2 { width: clamp(180px, 24vw, 420px); right: -6vw; top: 34%; animation: ambB 100s ease-in-out infinite alternate; }
+.amb-3 { width: clamp(150px, 18vw, 320px); left: 34%; bottom: -22%; animation: ambC 72s ease-in-out infinite alternate; }
+@keyframes ambA { from { transform: translate3d(0, 0, 0) rotate(-7deg); } to { transform: translate3d(3vw, -6vh, 0) rotate(3deg); } }
+@keyframes ambB { from { transform: translate3d(0, 0, 0) rotate(6deg) scale(1); } to { transform: translate3d(-2.5vw, 5vh, 0) rotate(-3deg) scale(1.06); } }
+@keyframes ambC { from { transform: translate3d(0, 0, 0) rotate(10deg); } to { transform: translate3d(2vw, -4vh, 0) rotate(16deg); } }
+
 /* ---------- page transitions ---------- */
 
 body { animation: pageIn 0.55s var(--ease); }
@@ -851,11 +889,14 @@ body.page-out { opacity: 0; transition: opacity 0.24s ease; }
 
 @media (prefers-reduced-motion: reduce) {
   .reveal { opacity: 1; transform: none; filter: none; transition: none; }
-  .hero-word .hl, .hero-render, .hero-col, .hero-baseline, .hero-scan {
+  .hero-word .hl, .hero-render, .hero-col, .hero-baseline {
     animation: none !important; transform: none !important; opacity: 1 !important; filter: none !important;
   }
-  .hero-scan { opacity: 0 !important; }
+  .hero-word::before, .hero-word::after { animation: none !important; opacity: 0 !important; }
   .hero-render svg, .hero-render img { animation: none !important; }
+  .hero-render img { filter: drop-shadow(0 42px 34px rgba(0, 0, 0, 0.16)) !important; }
+  .ambient, .ambient img { animation: none !important; transition: none; }
+  body.hero-go .ambient { opacity: 1; }
   .marquee-track { animation: none; }
   body { animation: none; }
   html { scroll-behavior: auto; }

@@ -77,6 +77,20 @@
   window.addEventListener("scroll", onScroll, { passive: true });
   onScroll();
 
+  /* ---------- ambient product drift (hero backdrops) ---------- */
+
+  var ambientHost = document.querySelector(".hero") || document.querySelector(".page-hero");
+  if (ambientHost) {
+    var amb = document.createElement("div");
+    amb.className = "ambient";
+    amb.setAttribute("aria-hidden", "true");
+    amb.innerHTML =
+      '<img class="amb-1" src="assets/img/tirzepatide.webp" alt="">' +
+      '<img class="amb-2" src="assets/img/nad.webp" alt="">' +
+      '<img class="amb-3" src="assets/img/bpc-157.webp" alt="">';
+    ambientHost.prepend(amb);
+  }
+
   /* ---------- hero launch sequence ---------- */
 
   requestAnimationFrame(function () {
