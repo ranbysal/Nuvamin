@@ -1,4 +1,4 @@
-/* Nuvamin — shared behaviour: header, cart store, reveals, accordions. */
+/* Nuvamin — shared behaviour: header, cart store, reveals, motion system. */
 
 (function () {
   "use strict";
@@ -29,12 +29,12 @@
   var footerHTML =
     '<div class="wrap footer-grid">' +
     '<div class="footer-brand"><span class="brand" style="text-align:left;text-indent:0">Nuvamin</span>' +
-    "<p>Precision supplements, formulated with published evidence and verified by independent labs. Made slowly, in small batches.</p></div>" +
-    '<div><h4 class="footer-h">Shop</h4><ul>' +
-    '<li><a href="shop.html">All products</a></li>' +
-    '<li><a href="shop.html#foundation">Foundation</a></li>' +
-    '<li><a href="shop.html#cognition">Cognition</a></li>' +
-    '<li><a href="shop.html#recovery">Recovery</a></li>' +
+    "<p>Research-grade peptides, independently verified lot by lot. Identity by mass spectrometry, purity by HPLC, certificates published for every batch.</p></div>" +
+    '<div><h4 class="footer-h">Catalogue</h4><ul>' +
+    '<li><a href="shop.html">All compounds</a></li>' +
+    '<li><a href="shop.html#metabolic">Metabolic</a></li>' +
+    '<li><a href="shop.html#repair">Repair</a></li>' +
+    '<li><a href="shop.html#longevity">Longevity</a></li>' +
     "</ul></div>" +
     '<div><h4 class="footer-h">Company</h4><ul>' +
     '<li><a href="about.html">About</a></li>' +
@@ -42,28 +42,64 @@
     '<li><a href="contact.html">Contact</a></li>' +
     "</ul></div>" +
     '<div><h4 class="footer-h">Support</h4><ul>' +
-    '<li><a href="contact.html#faq">FAQ</a></li>' +
-    '<li><a href="contact.html">Shipping &amp; returns</a></li>' +
-    '<li><a href="mailto:hello@nuvamin.com">hello@nuvamin.com</a></li>' +
+    '<li><a href="contact.html#faq">Certificates of analysis</a></li>' +
+    '<li><a href="contact.html">Shipping &amp; cold chain</a></li>' +
+    '<li><a href="mailto:lab@nuvamin.com">lab@nuvamin.com</a></li>' +
     "</ul></div>" +
     "</div>" +
     '<div class="footer-word" aria-hidden="true">Nuvamin</div>' +
-    '<p class="wrap footer-disclaimer">These statements have not been evaluated by a medicines authority. Nuvamin products are not intended to diagnose, treat, cure, or prevent any disease. A supplement supports a good routine; it does not replace one.</p>' +
-    '<div class="footer-base"><span>&copy; 2026 Nuvamin</span><span>Formulated with evidence. Verified by third parties.</span><span>Privacy &middot; Terms</span></div>';
+    '<p class="wrap footer-disclaimer">All Nuvamin products are supplied strictly for laboratory research use only. They are not for human or veterinary use, not dietary supplements, and not intended to diagnose, treat, cure, or prevent any disease or condition. By purchasing, you confirm you are a qualified researcher or institution and accept our terms of sale.</p>' +
+    '<div class="footer-base"><span>&copy; 2026 Nuvamin</span><span>Research use only &middot; Verified by independent laboratories</span><span>Privacy &middot; Terms</span></div>';
 
   var headerEl = document.querySelector(".site-header");
   if (headerEl && !headerEl.innerHTML.trim()) headerEl.innerHTML = headerHTML;
   var footerEl = document.querySelector(".site-footer");
   if (footerEl && !footerEl.innerHTML.trim()) footerEl.innerHTML = footerHTML;
 
-  /* ---------- header scroll state ---------- */
+  /* ---------- header scroll state + progress hairline ---------- */
 
+  var progressEl = document.createElement("div");
+  progressEl.className = "progress";
+  document.body.appendChild(progressEl);
+
+  var ticking = false;
   function onScroll() {
-    if (!headerEl) return;
-    headerEl.classList.toggle("scrolled", window.scrollY > 24);
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(function () {
+      if (headerEl) headerEl.classList.toggle("scrolled", window.scrollY > 24);
+      var doc = document.documentElement;
+      var max = doc.scrollHeight - window.innerHeight;
+      progressEl.style.transform = "scaleX(" + (max > 0 ? Math.min(1, window.scrollY / max) : 0) + ")";
+      ticking = false;
+    });
   }
   window.addEventListener("scroll", onScroll, { passive: true });
   onScroll();
+
+  /* ---------- hero launch sequence ---------- */
+
+  requestAnimationFrame(function () {
+    requestAnimationFrame(function () { document.body.classList.add("hero-go"); });
+  });
+
+  /* ---------- page fade transitions ---------- */
+
+  document.addEventListener("click", function (e) {
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+    var a = e.target.closest("a[href]");
+    if (!a) return;
+    var href = a.getAttribute("href");
+    if (!href || href.charAt(0) === "#" || a.target === "_blank" ||
+        /^(https?:|mailto:|tel:)/.test(href)) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    e.preventDefault();
+    document.body.classList.add("page-out");
+    setTimeout(function () { location.href = href; }, 220);
+  });
+  window.addEventListener("pageshow", function () {
+    document.body.classList.remove("page-out");
+  });
 
   /* ---------- cart store ---------- */
 
@@ -95,7 +131,7 @@
     cart[id] = (cart[id] || 0) + (qty || 1);
     cartWrite(cart);
     var p = typeof nvFindProduct === "function" ? nvFindProduct(id) : null;
-    toast((p ? p.name : "Item") + " added to cart");
+    toast((p ? p.name + " " + p.mg : "Item") + " added to cart");
   }
   function cartSet(id, qty) {
     var cart = cartRead();
@@ -163,11 +199,11 @@
     var form = e.target;
     if (form.matches("[data-newsletter]")) {
       e.preventDefault();
-      form.innerHTML = '<p class="news-ok">Welcome in. The first dispatch lands next week.</p>';
+      form.innerHTML = '<p class="news-ok">Confirmed. The next lot report lands in your inbox.</p>';
     }
     if (form.matches("[data-contact]")) {
       e.preventDefault();
-      form.innerHTML = '<p class="form-ok">Thank you &mdash; we read everything and reply within two working days.</p>';
+      form.innerHTML = '<p class="form-ok">Received &mdash; a member of the lab team replies within one working day.</p>';
     }
   });
 
