@@ -301,6 +301,7 @@ body.hero-go .hero-render { animation: heroRise 1.6s 0.55s var(--ease) forwards;
 @keyframes heroFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
 
 /* studio light, masked to the vial's own silhouette */
+@media (hover: none) { .vial-glow { display: none !important; } }
 .vial-glow {
   position: absolute;
   inset: 0;
@@ -419,14 +420,17 @@ body.hero-go .hero-baseline { animation: heroFadeUp 1.05s 1.4s var(--ease) forwa
   background: rgba(255, 255, 255, 0.7);
   backdrop-filter: blur(4px);
 }
-.pcard-meta { padding: 18px 2px 0; }
+/* cards flex so metas align and buttons share one baseline across a row */
+.pcard { display: flex; flex-direction: column; }
+.pcard-meta { padding: 18px 2px 0; display: flex; flex-direction: column; flex: 1; }
+.pcard-add { margin-top: auto; }
 .pcard-row { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
 .pcard-name { font-family: var(--display); font-size: 16px; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; }
 .pcard-name a:hover { color: var(--slate); }
 .pcard-price { font-family: var(--display); font-size: 14px; color: var(--ink-60); }
-.pcard-sub { font-size: 13px; color: var(--ink-60); margin-top: 4px; }
+.pcard-sub { font-size: 13px; color: var(--ink-60); margin: 4px 0 16px; }
 .pcard-add {
-  margin-top: 14px;
+  margin-top: auto;
   width: 100%;
   padding: 12px 18px;
   opacity: 0;
@@ -703,7 +707,7 @@ body.hero-go .hero-baseline { animation: heroFadeUp 1.05s 1.4s var(--ease) forwa
   padding: clamp(48px, 8vw, 120px);
 }
 .pdp-media svg { width: min(100%, 420px); height: auto; filter: drop-shadow(0 30px 40px rgba(0,0,0,0.10)); }
-.pdp-media img { width: auto; max-width: 100%; max-height: min(60vh, 560px); filter: drop-shadow(0 36px 34px rgba(0, 0, 0, 0.14)); }
+.pdp-media img { width: auto; max-width: min(58%, 230px); max-height: min(52vh, 480px); filter: drop-shadow(0 34px 30px rgba(0, 0, 0, 0.14)); }
 .pdp-info { padding: calc(72px + clamp(32px, 5vw, 72px)) var(--gutter) clamp(56px, 6vw, 96px) clamp(32px, 5vw, 88px); max-width: 640px; }
 .pdp-cat { font-family: var(--display); font-size: 10.5px; letter-spacing: 0.24em; text-transform: uppercase; color: var(--ink-60); }
 .pdp-title { font-size: clamp(38px, 4.4vw, 68px); margin: 14px 0 6px; }
@@ -1011,13 +1015,17 @@ body.page-out { opacity: 0; transition: opacity 0.24s ease; }
   }
   .hero-col { display: none; }
   .hero-render { width: min(72vw, 360px); }
-  .hero-render img { max-height: min(46vh, 380px); }
+  .hero-render img { max-height: min(46vh, 380px); max-width: min(48vw, 190px); }
   .hero .amb-1 { width: 36vw; left: -12vw; }
   .hero .amb-2 { width: 28vw; right: -9vw; }
   .hero .amb-3 { width: 20vw; }
+  .page-hero .amb-1 { width: 40vw; left: -14vw; }
+  .page-hero .amb-2 { width: 30vw; right: -10vw; }
+  .page-hero .amb-3 { width: 24vw; }
   .ing-layout, .contact-layout, .cart-layout, .pdp { grid-template-columns: 1fr; }
   .ing-sticky { position: static; }
-  .pdp-media { position: relative; height: auto; min-height: 60svh; }
+  .pdp-media { position: relative; height: auto; min-height: 0; padding: clamp(40px, 8vw, 80px) var(--gutter); }
+  .pdp-media img { max-height: 44vh; max-width: min(46%, 180px); }
   .pdp-info { padding-top: clamp(32px, 5vw, 72px); padding-left: var(--gutter); }
   .life-a { grid-column: 1 / -1; }
   .life-b { grid-column: 1 / span 7; }
@@ -1032,6 +1040,8 @@ body.page-out { opacity: 0; transition: opacity 0.24s ease; }
   .ing-item { grid-template-columns: 52px 1fr; }
   .ing-item p { grid-column: 2; }
   .journal-row { grid-template-columns: 1fr; gap: 8px; }
+  .std-row { grid-template-columns: 1fr; gap: 10px; }
+  .std-row .n { font-size: 13px; }
   .cart-line { grid-template-columns: 72px 1fr; row-gap: 10px; }
   .cart-line-price, .cart-line .qty { grid-column: 2; justify-self: start; }
   .hero-baseline { flex-direction: column; gap: 4px; }
