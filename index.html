@@ -286,7 +286,13 @@
 <script src="assets/js/main.js"></script>
 <script>
   (function () {
-    document.getElementById("hero-render").innerHTML = nvProductImg(nvFindProduct("retatrutide"));
+    var heroProduct = nvFindProduct("retatrutide");
+    document.getElementById("hero-render").innerHTML =
+      '<div class="vial-float"><div class="vial-rig" id="vial-rig">' +
+      nvProductImg(heroProduct) +
+      '<div class="vial-glow vial-sweep" aria-hidden="true"></div>' +
+      '<div class="vial-glow vial-light" id="vial-light" aria-hidden="true"></div>' +
+      "</div></div>";
     var grid = document.getElementById("featured-grid");
     grid.innerHTML = NV_PRODUCTS.slice(0, 4).map(function (p, i) {
       return nvProductCard(p, i);

@@ -97,6 +97,101 @@
     requestAnimationFrame(function () { document.body.classList.add("hero-go"); });
   });
 
+  /* ---------- hero motion engine: studio light + depth parallax ----------
+     The vial behaves like a physical object under a movable studio light:
+     a specular highlight (masked to the vial's own alpha) follows the
+     cursor while the rig tilts a few degrees toward it. The wordmark and
+     ambient layer move on separate depth planes; scroll acts as a dolly.
+     Everything is transform/background-position only, lerped in one rAF loop. */
+
+  function initHeroMotion() {
+    var hero = document.querySelector(".hero");
+    if (!hero) return;
+
+    var rig = document.getElementById("vial-rig");
+    var light = document.getElementById("vial-light");
+    var sweep = hero.querySelector(".vial-sweep");
+    var word = hero.querySelector(".hero-word");
+    var amb = hero.querySelector(".ambient");
+
+    // mask the light layers to the hero vial's silhouette
+    var maskOK = "maskImage" in document.body.style || "webkitMaskImage" in document.body.style;
+    if (maskOK && rig) {
+      var img = rig.querySelector("img");
+      var url = img ? 'url("' + img.getAttribute("src") + '")' : "";
+      [light, sweep].forEach(function (el) {
+        if (!el) return;
+        el.style.webkitMaskImage = url;
+        el.style.maskImage = url;
+      });
+      document.body.classList.add("mask-ok");
+    }
+
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    var fine = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+    var tx = 0, ty = 0;      // pointer target, -1..1
+    var cx = 0, cy = 0;      // smoothed pointer
+    var sy = 0;              // smoothed scroll
+    var inside = false;
+    var running = false, rafId = null;
+
+    function frame() {
+      cx += (tx - cx) * 0.07;
+      cy += (ty - cy) * 0.07;
+      sy += (window.scrollY - sy) * 0.14;
+      var s = Math.min(sy, 1200);
+
+      if (rig) {
+        rig.style.transform =
+          "rotateY(" + (cx * 5).toFixed(3) + "deg) rotateX(" + (cy * -4).toFixed(3) + "deg)" +
+          " translate3d(0," + (s * -0.04).toFixed(2) + "px,0)";
+      }
+      if (light) {
+        light.style.backgroundPosition =
+          (50 + cx * 34).toFixed(2) + "% " + (46 + cy * 30).toFixed(2) + "%";
+        light.style.opacity = inside ? 0.6 : 0;
+      }
+      if (word) {
+        word.style.transform =
+          "translate3d(" + (cx * -9).toFixed(2) + "px," +
+          (cy * -6 + s * -0.12).toFixed(2) + "px,0)";
+      }
+      if (amb) {
+        amb.style.transform =
+          "translate3d(" + (cx * 12).toFixed(2) + "px," + (cy * 9 + s * 0.05).toFixed(2) + "px,0)";
+      }
+      rafId = requestAnimationFrame(frame);
+    }
+    function start() { if (!running) { running = true; rafId = requestAnimationFrame(frame); } }
+    function stop() { running = false; if (rafId) cancelAnimationFrame(rafId); }
+
+    if (fine) {
+      hero.addEventListener("pointermove", function (e) {
+        var r = hero.getBoundingClientRect();
+        tx = ((e.clientX - r.left) / r.width - 0.5) * 2;
+        ty = ((e.clientY - r.top) / r.height - 0.5) * 2;
+        inside = true;
+      }, { passive: true });
+      hero.addEventListener("pointerleave", function () {
+        tx = 0; ty = 0; inside = false;
+      }, { passive: true });
+    }
+
+    if ("IntersectionObserver" in window) {
+      new IntersectionObserver(function (entries) {
+        entries[0].isIntersecting ? start() : stop();
+      }, { threshold: 0 }).observe(hero);
+    } else {
+      start();
+    }
+  }
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initHeroMotion);
+  } else {
+    initHeroMotion();
+  }
+
   /* ---------- page fade transitions ---------- */
 
   document.addEventListener("click", function (e) {

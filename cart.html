@@ -51,7 +51,7 @@
         subtotal += p.price * q;
         return (
           '<div class="cart-line">' +
-          '<a class="cart-thumb" href="product.html?id=' + p.id + '" style="background:' + p.panel + '">' + nvProductImg(p) + "</a>" +
+          '<a class="cart-thumb" href="product.html?id=' + p.id + '">' + nvProductImg(p) + "</a>" +
           "<div><h3>" + p.name + '</h3><p class="sub">' + p.sub + " &middot; " + p.form + '</p>' +
           '<button class="remove" data-remove="' + p.id + '">Remove</button></div>' +
           '<div class="qty"><button data-dec="' + p.id + '" aria-label="Decrease">&minus;</button><output>' + q + '</output><button data-inc="' + p.id + '" aria-label="Increase">+</button></div>' +
