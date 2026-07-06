@@ -193,10 +193,12 @@ ul { list-style: none; }
   flex-direction: column;
   justify-content: flex-end;
   position: relative;
-  overflow: hidden;
+  /* NO overflow clip here — it would trap the sticky wordmark. Ambient is
+     clipped by its own container instead. */
   background: var(--paper);
   padding-top: 72px;
 }
+.hero .ambient { overflow: hidden; }
 .hero-word {
   font-family: var(--display);
   font-weight: 700;
@@ -209,45 +211,52 @@ ul { list-style: none; }
   user-select: none;
   margin-top: clamp(24px, 6vh, 80px);
 }
-/* award-launch: per-letter optical focus + converge */
-.hero-word .hl {
+/* launch: a hairline draws itself, and the wordmark rises out of it.
+   Masked type, expo easing, no blur — editorial, clinical, composed.
+   The word is sticky so it can later condense into the header brand. */
+.hero-word {
+  position: sticky;
+  top: 6px;
+  z-index: 5;
+  pointer-events: none;
+  transform-origin: top center;
+  will-change: transform, opacity;
+}
+.hm {
   display: inline-block;
-  opacity: 0;
-  transform: translate3d(var(--dx, 0), 0.34em, 0) scale(1.07);
-  filter: blur(16px);
-  will-change: transform, filter, opacity;
+  overflow: hidden;
+  vertical-align: bottom;
+  padding-top: 0.14em;
+  margin-top: -0.14em;
 }
-body.hero-go .hero-word .hl {
-  animation: heroLetter 1.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  animation-delay: calc(var(--i) * 0.085s + 0.15s);
+.hl {
+  display: inline-block;
+  transform: translateY(118%);
+  will-change: transform;
 }
-@keyframes heroLetter {
-  0%   { opacity: 0; transform: translate3d(var(--dx, 0), 0.34em, 0) scale(1.07); filter: blur(16px); }
-  55%  { opacity: 1; filter: blur(0); }
-  100% { opacity: 1; transform: translate3d(0, 0, 0) scale(1); filter: blur(0); }
+body.hero-go .hl {
+  animation: letterRise 1.15s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+  animation-delay: calc(var(--i) * 0.052s + 0.36s);
 }
-/* converging hairlines — mirror the letters' inward assembly, meet, then dissolve */
-.hero-word { position: relative; }
-.hero-word::before, .hero-word::after {
+@keyframes letterRise { to { transform: translateY(0); } }
+/* the baseline the letters rise from */
+.hero-word::after {
   content: "";
   position: absolute;
-  top: 55%;
-  width: 50%;
+  left: 5%;
+  right: 5%;
+  bottom: -0.02em;
   height: 1px;
-  background: var(--blue);
+  background: var(--ink);
   opacity: 0;
   transform: scaleX(0);
-  pointer-events: none;
-  z-index: -1;
 }
-.hero-word::before { left: 0; transform-origin: left center; }
-.hero-word::after { right: 0; transform-origin: right center; }
-body.hero-go .hero-word::before,
-body.hero-go .hero-word::after { animation: lineConverge 1.5s 0.1s var(--ease) forwards; }
-@keyframes lineConverge {
+body.hero-go .hero-word::after { animation: ruleDraw 2.3s cubic-bezier(0.19, 1, 0.22, 1) forwards; }
+@keyframes ruleDraw {
   0%   { transform: scaleX(0); opacity: 0; }
-  18%  { opacity: 0.9; }
-  62%  { transform: scaleX(1); opacity: 0.9; }
+  10%  { opacity: 0.5; }
+  42%  { transform: scaleX(1); opacity: 0.5; }
+  74%  { opacity: 0.5; }
   100% { transform: scaleX(1); opacity: 0; }
 }
 
@@ -274,11 +283,10 @@ body.hero-go .hero-word::after { animation: lineConverge 1.5s 0.1s var(--ease) f
   position: relative;
   z-index: 2;
   opacity: 0;
-  transform: translateY(64px) scale(0.95);
-  filter: blur(12px);
+  transform: translateY(90px) scale(0.965);
 }
-body.hero-go .hero-render { animation: heroRise 1.6s 0.55s var(--ease) forwards; }
-@keyframes heroRise { to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); } }
+body.hero-go .hero-render { animation: heroRise 1.7s 0.7s cubic-bezier(0.19, 1, 0.22, 1) forwards; }
+@keyframes heroRise { to { opacity: 1; transform: translateY(0) scale(1); } }
 .hero-render svg { width: 100%; height: auto; }
 
 /* three-layer rig: float (idle breathe) > rig (cursor tilt) > img + light layers */
@@ -333,10 +341,9 @@ body.mask-ok.hero-go .vial-sweep { animation: vialSweep 1.6s 2.1s cubic-bezier(0
 }
 
 /* hero supporting elements resolve after the wordmark */
-.hero-word { will-change: transform; }
 .hero-col, .hero-baseline { opacity: 0; }
-body.hero-go .hero-col { animation: heroFadeUp 1.05s 1.05s var(--ease) forwards; }
-body.hero-go .hero-baseline { animation: heroFadeUp 1.05s 1.4s var(--ease) forwards; }
+body.hero-go .hero-col { animation: heroFadeUp 1.05s 1.15s var(--ease) forwards; }
+body.hero-go .hero-baseline { animation: heroFadeUp 1.05s 1.5s var(--ease) forwards; }
 @keyframes heroFadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: none; } }
 
 .hero-baseline {
@@ -867,25 +874,80 @@ body.hero-go .hero-baseline { animation: heroFadeUp 1.05s 1.4s var(--ease) forwa
 
 .reveal {
   opacity: 0;
-  transform: translateY(36px);
-  filter: blur(7px);
-  transition: opacity 1.1s var(--ease), transform 1.1s var(--ease), filter 1.1s var(--ease);
+  transform: translateY(32px);
+  transition: opacity 1.1s var(--ease), transform 1.1s var(--ease);
   transition-delay: var(--d, 0ms);
 }
-.reveal.in-view { opacity: 1; transform: none; filter: blur(0); }
+.reveal.in-view { opacity: 1; transform: none; }
 
-/* ---------- scroll progress hairline ---------- */
-
-.progress {
-  position: fixed;
-  top: 0; left: 0;
-  width: 100%; height: 2px;
-  background: var(--slate);
-  transform-origin: 0 50%;
-  transform: scaleX(0);
-  z-index: 300;
-  pointer-events: none;
+/* display headings unmask upward inside their own line box */
+.section-head.reveal .h-display,
+.reveal > .h-display {
+  clip-path: inset(-8% -5% 102% -5%);
+  transform: translateY(0.22em);
+  transition: clip-path 1.2s cubic-bezier(0.19, 1, 0.22, 1), transform 1.2s cubic-bezier(0.19, 1, 0.22, 1);
+  transition-delay: inherit;
 }
+.section-head.reveal.in-view .h-display,
+.reveal.in-view > .h-display {
+  clip-path: inset(-8% -5% -12% -5%);
+  transform: none;
+}
+
+/* ---------- interior page load choreography ---------- */
+
+.page-hero .kicker, .page-hero .lede { opacity: 0; }
+.page-hero .h-display {
+  opacity: 0;
+  clip-path: inset(-8% -5% 102% -5%);
+  transform: translateY(0.18em);
+}
+body.hero-go .page-hero .kicker { animation: heroFadeUp 0.9s 0.2s var(--ease) forwards; }
+body.hero-go .page-hero .h-display { animation: pageTitleIn 1.25s 0.3s cubic-bezier(0.19, 1, 0.22, 1) forwards; }
+body.hero-go .page-hero .lede { animation: heroFadeUp 1s 0.55s var(--ease) forwards; }
+@keyframes pageTitleIn {
+  to { opacity: 1; clip-path: inset(-8% -5% -12% -5%); transform: none; }
+}
+
+/* ---------- custom scrollbar ---------- */
+
+body.customscroll { scrollbar-width: none; -ms-overflow-style: none; }
+body.customscroll::-webkit-scrollbar { width: 0; height: 0; }
+.scrollrail {
+  position: fixed;
+  top: 0; right: 0;
+  width: 18px;
+  height: 100vh;
+  z-index: 400;
+  opacity: 0;
+  transition: opacity 0.55s ease 0.9s;
+}
+.scrollrail.show { opacity: 1; transition-delay: 0s; transition-duration: 0.22s; }
+.scrollrail::before {
+  content: "";
+  position: absolute;
+  top: 12px; bottom: 12px; right: 8px;
+  width: 1px;
+  background: var(--ink);
+  opacity: 0.10;
+  transition: background 0.5s ease, opacity 0.5s ease;
+}
+.scrollrail.on-dark::before { background: #fff; opacity: 0.16; }
+.scrollthumb {
+  position: absolute;
+  right: 5.5px;
+  width: 4px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.36);
+  min-height: 44px;
+  cursor: grab;
+  transition: width 0.28s var(--ease), right 0.28s var(--ease), background 0.5s ease;
+}
+.scrollrail.on-dark .scrollthumb { background: rgba(255, 255, 255, 0.62); }
+.scrollrail:hover .scrollthumb, .scrollthumb.drag { width: 6px; right: 4.5px; }
+.scrollrail:hover .scrollthumb { background: rgba(0, 0, 0, 0.6); }
+.scrollrail.on-dark:hover .scrollthumb { background: rgba(255, 255, 255, 0.9); }
+.scrollthumb.drag { cursor: grabbing; }
 
 /* ---------- ambient product drift (faint, behind hero content) ---------- */
 
@@ -924,17 +986,21 @@ body { animation: pageIn 0.55s var(--ease); }
 body.page-out { opacity: 0; transition: opacity 0.24s ease; }
 
 @media (prefers-reduced-motion: reduce) {
-  .reveal { opacity: 1; transform: none; filter: none; transition: none; }
-  .hero-word .hl, .hero-render, .hero-col, .hero-baseline {
-    animation: none !important; transform: none !important; opacity: 1 !important; filter: none !important;
+  .reveal { opacity: 1; transform: none; transition: none; }
+  .section-head.reveal .h-display, .reveal > .h-display { clip-path: none; transform: none; transition: none; }
+  .hl, .hero-render, .hero-col, .hero-baseline {
+    animation: none !important; transform: none !important; opacity: 1 !important;
   }
-  .hero-word::before, .hero-word::after { animation: none !important; opacity: 0 !important; }
+  .hero-word::after { animation: none !important; opacity: 0 !important; }
   .hero-render svg, .hero-render img, .vial-float { animation: none !important; }
-  .hero-render img { filter: drop-shadow(0 42px 34px rgba(0, 0, 0, 0.16)) !important; }
   .vial-glow { display: none !important; }
-  .hero-word, .vial-rig { transform: none !important; }
+  .hero-word, .vial-rig { transform: none !important; opacity: 1 !important; }
+  .page-hero .kicker, .page-hero .h-display, .page-hero .lede {
+    animation: none !important; opacity: 1 !important; clip-path: none !important; transform: none !important;
+  }
   .ambient, .ambient img { animation: none !important; transition: none; }
   body.hero-go .ambient { opacity: 1; }
+  .scrollrail { transition: none; }
   body { animation: none; }
   html { scroll-behavior: auto; }
 }
