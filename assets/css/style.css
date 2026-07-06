@@ -282,7 +282,7 @@ body.hero-go .hero-render { animation: heroRise 1.6s 0.55s var(--ease) forwards;
 .hero-render svg { width: 100%; height: auto; }
 
 /* three-layer rig: float (idle breathe) > rig (cursor tilt) > img + light layers */
-.vial-float { animation: heroFloat 7s ease-in-out 2.4s infinite; }
+.vial-float { animation: heroFloat 5s ease-in-out 2.4s infinite; }
 .vial-rig {
   position: relative;
   width: fit-content;
@@ -1003,9 +1003,18 @@ body.page-out { opacity: 0; transition: opacity 0.24s ease; }
   .header-inner { grid-template-columns: auto 1fr auto; gap: 18px; }
   .nav-left { display: none; }
   .brand { text-align: left; text-indent: 0; }
-  .hero-stage { grid-template-columns: 1fr; justify-items: center; text-align: center; }
+  .hero-stage {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    text-align: center;
+    margin-top: clamp(10px, 3vh, 28px); /* no wordmark overlap on mobile */
+  }
   .hero-col { display: none; }
   .hero-render { width: min(72vw, 360px); }
+  .hero-render img { max-height: min(46vh, 380px); }
+  .hero .amb-1 { width: 36vw; left: -12vw; }
+  .hero .amb-2 { width: 28vw; right: -9vw; }
+  .hero .amb-3 { width: 20vw; }
   .ing-layout, .contact-layout, .cart-layout, .pdp { grid-template-columns: 1fr; }
   .ing-sticky { position: static; }
   .pdp-media { position: relative; height: auto; min-height: 60svh; }
