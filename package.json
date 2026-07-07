@@ -1,0 +1,15 @@
+{
+  "name": "nuvamin",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Nuvamin storefront + hosted-gateway checkout (NMI, provider-adapter architecture)",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server/app.js",
+    "dev": "node server/app.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "nodemailer": "^6.9.14"
+  }
+}

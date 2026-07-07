@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Payment Not Completed — Nuvamin</title>
+<meta name="description" content="Your Nuvamin payment was not completed.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23000000'/%3E%3Ctext x='16' y='22' text-anchor='middle' font-family='Arial' font-size='17' fill='%23FFFFFF'%3EN%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body data-page="">
+
+<header class="site-header"></header>
+
+<section class="page-hero" style="padding-bottom:clamp(60px,8vw,120px)">
+  <div class="wrap">
+    <div class="result is-fail">
+      <div class="r-badge" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M7 7 L17 17 M17 7 L7 17" stroke="#455A64" stroke-width="1.8"/></svg>
+      </div>
+      <p class="kicker no-rule" style="justify-content:center">Payment not completed</p>
+      <h1>Nothing was charged</h1>
+      <p class="r-sub">Your payment was cancelled or declined. Your cart is still saved — you can try again.</p>
+      <p class="r-order" id="r-order"></p>
+      <div class="r-actions">
+        <a class="btn" href="cart.html">Retry payment <span class="arr">&rarr;</span></a>
+        <a class="btn btn-line" href="shop.html">Back to shop</a>
+      </div>
+      <p class="r-note">Need help? Email <a href="mailto:lab@nuvamin.com" style="border-bottom:1px solid var(--line)">lab@nuvamin.com</a>.</p>
+    </div>
+  </div>
+</section>
+
+<footer class="site-footer"></footer>
+
+<script src="assets/js/products.js"></script>
+<script src="assets/js/main.js"></script>
+<script>
+  (function () {
+    var id = new URLSearchParams(location.search).get("order");
+    if (id) document.getElementById("r-order").textContent = "Order " + id;
+  })();
+</script>
+</body>
+</html>
