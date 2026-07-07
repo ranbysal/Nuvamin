@@ -32,9 +32,9 @@
     "<p>Research-grade peptides, independently verified lot by lot. Identity by mass spectrometry, purity by HPLC, certificates published for every batch.</p></div>" +
     '<div><h4 class="footer-h">Catalogue</h4><ul>' +
     '<li><a href="shop.html">All compounds</a></li>' +
-    '<li><a href="shop.html#metabolic">Metabolic</a></li>' +
-    '<li><a href="shop.html#repair">Repair</a></li>' +
-    '<li><a href="shop.html#longevity">Longevity</a></li>' +
+    '<li><a href="shop.html#agonists">Receptor agonists</a></li>' +
+    '<li><a href="shop.html#fragments">Peptide fragments</a></li>' +
+    '<li><a href="shop.html#coenzymes">Coenzymes</a></li>' +
     "</ul></div>" +
     '<div><h4 class="footer-h">Company</h4><ul>' +
     '<li><a href="about.html">About</a></li>' +
@@ -44,7 +44,7 @@
     '<div><h4 class="footer-h">Support</h4><ul>' +
     '<li><a href="contact.html#faq">Certificates of analysis</a></li>' +
     '<li><a href="shipping-returns.html">Shipping &amp; cold chain</a></li>' +
-    '<li><a href="mailto:lab@nuvamin.bio">lab@nuvamin.bio</a></li>' +
+    '<li><a href="mailto:labs@nuvamin.bio">labs@nuvamin.bio</a></li>' +
     "</ul></div>" +
     "</div>" +
     '<div class="footer-word" aria-hidden="true">Nuvamin</div>' +
@@ -251,7 +251,7 @@
     var href = a.getAttribute("href");
     if (!href || href.charAt(0) === "#" || a.target === "_blank" ||
         /^(https?:|mailto:|tel:)/.test(href)) return;
-    // Same-page fragment link (e.g. the footer's shop.html#metabolic while
+    // Same-page fragment link (e.g. the footer's shop.html#agonists while
     // already on shop.html): no real navigation happens, so fading out would
     // leave the page invisible. Let the browser handle it natively.
     var dest = new URL(href, location.href);

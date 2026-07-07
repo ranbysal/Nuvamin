@@ -23,7 +23,7 @@
 var SECRET = "CHANGE_ME_TO_A_LONG_RANDOM_STRING"; // must match SHEETS_WEBHOOK_SECRET in Vercel
 var SHOP_NAME = "Nuvamin";
 var SITE = "https://nuvamin.bio";
-var SUPPORT_EMAIL = "lab@nuvamin.bio"; // Reply-To on shipping emails
+var SUPPORT_EMAIL = "support@nuvamin.bio"; // Reply-To on shipping emails
 var SHEET_NAME = "Orders";
 
 /* Column layout (1-based) */
@@ -195,7 +195,7 @@ function buildShippedEmail(data, orderId, customerName, shipToText, tracking, ca
       '<td style="padding:16px 12px 16px 0;border-top:1px solid ' + HAIR + ';" valign="middle">' +
         '<p style="margin:0;font-family:' + SANS + ';font-size:13px;font-weight:700;letter-spacing:0.08em;color:' + INK + ';text-transform:uppercase;">' +
           escH(i.name) + '&nbsp;' + escH(i.mg) + '&nbsp;&nbsp;<span style="color:' + MUTE + ';font-weight:400;">&times;&nbsp;' + escH(i.quantity) + '</span></p>' +
-        '<p style="margin:4px 0 0;font-family:' + SANS + ';font-size:12px;color:' + MUTE + ';">Lyophilised powder &middot; CoA in the box</p></td>' +
+        '<p style="margin:4px 0 0;font-family:' + SANS + ';font-size:12px;color:' + MUTE + ';">Lyophilised powder</p></td>' +
       '<td align="right" style="padding:16px 0;border-top:1px solid ' + HAIR + ';" valign="middle">' +
         '<span style="font-family:' + SANS + ';font-size:13px;color:' + INK + ';">' + money(i.lineTotal) + '</span></td></tr>';
   }).join("");
@@ -240,7 +240,7 @@ function buildShippedEmail(data, orderId, customerName, shipToText, tracking, ca
         '<p style="margin:0 0 18px;font-family:' + SANS + ';font-size:11px;font-weight:700;letter-spacing:0.3em;color:' + MUTE + ';text-transform:uppercase;">Shipping update</p>' +
         '<h1 style="margin:0;font-family:' + SANS + ';font-size:40px;line-height:1.04;font-weight:700;letter-spacing:-0.01em;color:' + INK + ';text-transform:uppercase;">It&rsquo;s on<br>the way.</h1>' +
         '<p style="margin:16px 0 0;font-family:' + SERIF + ';font-style:italic;font-size:18px;color:' + SLATE + ';">' +
-          (firstName ? escH(firstName) + ", your" : "Your") + ' order has left the lab — packed cold, sealed, certified.</p>' +
+          (firstName ? escH(firstName) + ", your" : "Your") + ' order has left the lab — packed, sealed, and on its way.</p>' +
       '</td></tr></table>' +
       '<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:26px 40px 8px;">' +
         '<table role="presentation" cellpadding="0" cellspacing="0"><tr><td style="border:1px solid ' + HAIR + ';padding:10px 22px;">' +
@@ -252,11 +252,10 @@ function buildShippedEmail(data, orderId, customerName, shipToText, tracking, ca
       '</td></tr></table>' +
       cta +
       '<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:22px 40px 46px;">' +
-        '<p style="margin:0;font-family:' + SANS + ';font-size:12px;line-height:1.8;color:' + MUTE + ';">Shipped on dry ice — store as directed on each vial as soon as it arrives.<br>Certificate of analysis included in the box.</p>' +
+        '<p style="margin:0;font-family:' + SANS + ';font-size:12px;line-height:1.8;color:' + MUTE + ';">Store each vial as directed on its label when it arrives.</p>' +
       '</td></tr></table>' +
     '</td></tr>' +
     '<tr><td style="padding:26px 40px 0;" align="center">' +
-      '<p style="margin:0 0 6px;font-family:' + SANS + ';font-size:10px;letter-spacing:0.22em;color:' + MUTE + ';text-transform:uppercase;">Certificate of analysis included&nbsp;&nbsp;&middot;&nbsp;&nbsp;Cold-chain dispatch</p>' +
       '<p style="margin:0 0 14px;font-family:' + SANS + ';font-size:11px;line-height:1.7;color:#9AA7AE;">All Nuvamin products are supplied strictly for laboratory research use only.<br>Not for human or veterinary use.</p>' +
       '<p style="margin:0;font-family:' + SANS + ';font-size:11px;color:#9AA7AE;">Questions? <a href="mailto:' + SUPPORT_EMAIL + '" style="color:' + SLATE + ';text-decoration:underline;">' + SUPPORT_EMAIL + '</a>&nbsp;&nbsp;&middot;&nbsp;&nbsp;&copy; 2026 Nuvamin</p>' +
     '</td></tr>' +
@@ -269,8 +268,7 @@ function buildShippedEmail(data, orderId, customerName, shipToText, tracking, ca
     (trackLink ? "Track it: " + trackLink + "\n" : "") + "\n" +
     items.map(function (i) { return "  " + i.quantity + " x " + i.name + " " + i.mg; }).join("\n") + "\n\n" +
     (shipLines.length ? "On its way to:\n  " + shipLines.join("\n  ") + "\n\n" : "") +
-    "Shipped on dry ice — store as directed on each vial as soon as it arrives.\n" +
-    "Certificate of analysis included in the box.\n\n" +
+    "Store each vial as directed on its label when it arrives.\n\n" +
     "Questions? " + SUPPORT_EMAIL + "\n\n— " + SHOP_NAME;
 
   return {

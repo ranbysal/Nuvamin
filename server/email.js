@@ -83,9 +83,6 @@ function emailShell(inner, preheader) {
       ${inner}
     </td></tr>
     <tr><td style="padding:26px 40px 0;" align="center">
-      <p style="margin:0 0 6px;font-family:${SANS};font-size:10px;letter-spacing:0.22em;color:${MUTE};text-transform:uppercase;">
-        Certificate of analysis included&nbsp;&nbsp;&middot;&nbsp;&nbsp;Cold-chain dispatch
-      </p>
       <p style="margin:0 0 14px;font-family:${SANS};font-size:11px;line-height:1.7;color:#9AA7AE;">
         All Nuvamin products are supplied strictly for laboratory research use only.<br>
         Not for human or veterinary use.
@@ -144,7 +141,7 @@ function itemRows(order) {
           <p style="margin:0;font-family:${SANS};font-size:13px;font-weight:700;letter-spacing:0.08em;color:${INK};text-transform:uppercase;">
             ${escHtml(i.name)}&nbsp;${escHtml(i.mg)}&nbsp;&nbsp;<span style="color:${MUTE};font-weight:400;">&times;&nbsp;${escHtml(i.quantity)}</span>
           </p>
-          <p style="margin:4px 0 0;font-family:${SANS};font-size:12px;color:${MUTE};">Lyophilised powder &middot; CoA included</p>
+          <p style="margin:4px 0 0;font-family:${SANS};font-size:12px;color:${MUTE};">Lyophilised powder</p>
         </td>
         <td align="right" style="padding:16px 0;border-top:1px solid ${HAIR};" valign="middle">
           <span style="font-family:${SANS};font-size:13px;color:${INK};">${money(i.lineTotal, order.currency)}</span>
@@ -213,8 +210,7 @@ function renderReceipt(order) {
     `Shipping: ${order.shipping === 0 ? "Free" : money(order.shipping, order.currency)}\n` +
     `Total:    ${money(order.total, order.currency)}\n\n` +
     (addr.length ? `Ships to:\n  ${addr.join("\n  ")}\n\n` : "") +
-    `We'll email you again the moment it ships. A certificate of analysis is ` +
-    `included with every order. Cold-chain dispatch on dry ice.\n\n` +
+    `We'll email you again the moment it ships.\n\n` +
     `Questions? ${config.email.support}\n\n— Nuvamin`;
 
   const inner = `
@@ -237,8 +233,7 @@ function renderReceipt(order) {
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
       <tr><td align="center" style="padding:22px 40px 46px;">
         <p style="margin:0;font-family:${SANS};font-size:12px;line-height:1.8;color:${MUTE};">
-          We&rsquo;ll email you again the moment your order ships.<br>
-          Packed on dry ice, certificate of analysis in the box.
+          We&rsquo;ll email you again the moment your order ships.
         </p>
       </td></tr>
       </table>`;

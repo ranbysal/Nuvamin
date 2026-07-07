@@ -174,7 +174,7 @@ app.post("/api/contact", rateLimitContact, async (req, res) => {
     await email.sendContactMessage(msg);
     return res.json({ ok: true });
   } catch (e) {
-    console.error("[contact] send failed:", e.message);
+    console.error("[contact] send failed:", e && (e.response || e.code || e.message), e && e.responseCode || "");
     return res.status(502).json({ error: "We couldn't send your message right now. Please email us directly." });
   }
 });

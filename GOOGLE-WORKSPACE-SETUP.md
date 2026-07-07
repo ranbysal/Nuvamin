@@ -25,7 +25,7 @@ password is never used).
 
 **In the client's Google account (once the Workspace mailbox exists):**
 
-1. Sign in to the mailbox the site should send from, e.g. `orders@THEIRDOMAIN.com`.
+1. Sign in to the mailbox the site sends from: `labs@nuvamin.bio`.
 2. Turn on **2-Step Verification**: [myaccount.google.com/security](https://myaccount.google.com/security) → *2-Step Verification*. (App passwords require it.)
 3. Create an app password: [myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords) → app name e.g. `Nuvamin site` → **Create** → copy the 16-character password.
 
@@ -35,12 +35,12 @@ password is never used).
 | --- | --- |
 | `SMTP_HOST` | `smtp.gmail.com` |
 | `SMTP_PORT` | `465` |
-| `SMTP_USER` | `orders@THEIRDOMAIN.com` |
+| `SMTP_USER` | `labs@nuvamin.bio` |
 | `SMTP_PASS` | the 16-character app password |
-| `RECEIPT_FROM` | `Nuvamin <orders@THEIRDOMAIN.com>` |
-| `SUPPORT_EMAIL` | the public support address, e.g. `lab@THEIRDOMAIN.com` |
-| `CONTACT_TO` | inbox for contact-form messages (can equal `SUPPORT_EMAIL`) |
-| `ORDER_NOTIFY_EMAIL` | inbox for new-order alerts (can equal `SUPPORT_EMAIL`) |
+| `RECEIPT_FROM` | `Nuvamin <labs@nuvamin.bio>` |
+| `SUPPORT_EMAIL` | `support@nuvamin.bio` (the questions inbox) |
+| `CONTACT_TO` | `support@nuvamin.bio` — receives contact-form messages |
+| `ORDER_NOTIFY_EMAIL` | `labs@nuvamin.bio` — receives new-order alerts |
 
 Then **redeploy** (Deployments → ⋯ on the latest → Redeploy) so the new
 variables take effect.
@@ -49,9 +49,9 @@ variables take effect.
 > `RECEIPT_FROM` doesn't match `SMTP_USER` or one of its aliases, Gmail will
 > rewrite the From header — keep them the same address to be safe.
 
-> The site pages currently show `lab@nuvamin.bio` as the public email. If the
-> client's real address differs, tell me the final address and I'll update the
-> pages in one pass.
+> Address map: `labs@nuvamin.bio` sends all order email and shows in the site
+> footer; `support@nuvamin.bio` receives contact-form messages and is the
+> public questions address on the site.
 
 ---
 
@@ -71,8 +71,8 @@ The full script lives in this repo at **`google/nuvamin-orders.gs`**.
 
 **2. Attach the script** — **Extensions → Apps Script**, delete what's in the
 editor, paste the entire contents of `google/nuvamin-orders.gs`, and change
-the `SECRET` line to any long random string. (Check `SUPPORT_EMAIL` at the
-top too — it's the Reply-To on shipping emails.) Save.
+the `SECRET` line to any long random string. (`SUPPORT_EMAIL` at the top is
+already `support@nuvamin.bio` — the Reply-To on shipping emails.) Save.
 
 **3. Run `setup()` once** — in the toolbar, select `setup` in the function
 dropdown → **Run** → authorize when prompted (it needs Sheets + Gmail because

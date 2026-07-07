@@ -87,13 +87,15 @@ const config = {
     host: env.SMTP_HOST || "",
     port: parseInt(env.SMTP_PORT || "587", 10),
     user: env.SMTP_USER || "",
-    pass: env.SMTP_PASS || "",
-    from: env.RECEIPT_FROM || "Nuvamin <lab@nuvamin.bio>",
-    support: env.SUPPORT_EMAIL || "lab@nuvamin.bio",
+    // Gmail displays app passwords with spaces ("xxxx xxxx xxxx xxxx");
+    // pasting them verbatim fails auth, so strip whitespace for Gmail hosts.
+    pass: /gmail/i.test(env.SMTP_HOST || "") ? (env.SMTP_PASS || "").replace(/\s+/g, "") : env.SMTP_PASS || "",
+    from: env.RECEIPT_FROM || "Nuvamin <labs@nuvamin.bio>",
+    support: env.SUPPORT_EMAIL || "support@nuvamin.bio",
     // Where contact-form messages land (the company inbox).
-    contactTo: env.CONTACT_TO || env.SUPPORT_EMAIL || "lab@nuvamin.bio",
+    contactTo: env.CONTACT_TO || env.SUPPORT_EMAIL || "support@nuvamin.bio",
     // Where new-paid-order notifications land (the company inbox).
-    orderNotify: env.ORDER_NOTIFY_EMAIL || env.SUPPORT_EMAIL || "lab@nuvamin.bio",
+    orderNotify: env.ORDER_NOTIFY_EMAIL || env.SUPPORT_EMAIL || "labs@nuvamin.bio",
   },
 
   // Google Sheets order log — an Apps Script web-app URL (see GOOGLE-WORKSPACE-SETUP.md).
