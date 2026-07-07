@@ -15,11 +15,22 @@ function money(n, currency) {
   return sym + Number(n).toFixed(2);
 }
 
+// Escape every dynamic value interpolated into the page — the "session"
+// query param in particular is attacker-controlled.
+function esc(v) {
+  return String(v == null ? "" : v)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 function MOCK_PAGE(order, session) {
   const rows = order.items
     .map(
       (i) =>
-        `<tr><td>${i.quantity} &times; ${i.name} ${i.mg}</td><td class="r">${money(i.lineTotal, order.currency)}</td></tr>`
+        `<tr><td>${esc(i.quantity)} &times; ${esc(i.name)} ${esc(i.mg)}</td><td class="r">${money(i.lineTotal, order.currency)}</td></tr>`
     )
     .join("");
   return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">
@@ -48,7 +59,7 @@ function MOCK_PAGE(order, session) {
   <div class="card">
     <div class="badge">Secure hosted checkout</div>
     <h1>NUVAMIN</h1>
-    <div class="badge">Order ${order.id}</div>
+    <div class="badge">Order ${esc(order.id)}</div>
     <div class="sim">Simulated gateway (development). No real card is processed and nothing is stored.</div>
     <table>${rows}
       <tr><td>Shipping</td><td class="r">${order.shipping === 0 ? "Free" : money(order.shipping, order.currency)}</td></tr>
@@ -58,8 +69,8 @@ function MOCK_PAGE(order, session) {
     <div class="grid"><div><label>Expiry</label><input value="12 / 30"></div>
       <div><label>CVC</label><input value="123"></div></div>
     <form method="POST" action="/mock-hosted/complete">
-      <input type="hidden" name="order" value="${order.id}">
-      <input type="hidden" name="session" value="${session}">
+      <input type="hidden" name="order" value="${esc(order.id)}">
+      <input type="hidden" name="session" value="${esc(session)}">
       <button class="pay" name="outcome" value="paid">Pay ${money(order.total, order.currency)}</button>
       <button class="alt" name="outcome" value="failed">Simulate decline</button>
       <button class="alt" name="outcome" value="cancel">Cancel &amp; return</button>

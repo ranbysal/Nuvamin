@@ -19,6 +19,9 @@ const path = require("path");
     let val = m[2];
     if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
       val = val.slice(1, -1);
+    } else {
+      // Unquoted values: strip trailing inline comments ("KEY=value  # note").
+      val = val.replace(/\s+#.*$/, "").trim();
     }
     if (process.env[m[1]] === undefined) process.env[m[1]] = val;
   });
@@ -27,13 +30,30 @@ const path = require("path");
 const env = process.env;
 const PUBLIC_BASE_URL = (env.PUBLIC_BASE_URL || "http://localhost:3000").replace(/\/$/, "");
 
+// Vercel sets VERCEL=1 on every deployment; VERCEL_ENV/NODE_ENV mark production.
+const ON_VERCEL = Boolean(env.VERCEL);
+const IS_PRODUCTION = env.NODE_ENV === "production" || env.VERCEL_ENV === "production";
+
 const config = {
   port: parseInt(env.PORT || "3000", 10),
   publicBaseUrl: PUBLIC_BASE_URL,
   currency: env.CURRENCY || "EUR",
 
+  onVercel: ON_VERCEL,
+  isProduction: IS_PRODUCTION,
+
   // "nmi" | "authorizenet" | "mock"
   provider: (env.PAYMENT_PROVIDER || "mock").toLowerCase(),
+  // Explicit opt-in required to run the simulated gateway in production.
+  allowMockInProduction: env.ALLOW_MOCK_GATEWAY === "true",
+
+  // "file" | "redis" — defaults to redis whenever Upstash/KV credentials exist.
+  orderStore: (env.ORDER_STORE || (env.UPSTASH_REDIS_REST_URL || env.KV_REST_API_URL ? "redis" : "file")).toLowerCase(),
+  redis: {
+    // Vercel Marketplace (Upstash) injects UPSTASH_*; legacy Vercel KV injects KV_*.
+    url: env.UPSTASH_REDIS_REST_URL || env.KV_REST_API_URL || "",
+    token: env.UPSTASH_REDIS_REST_TOKEN || env.KV_REST_API_TOKEN || "",
+  },
 
   paths: {
     success: env.CHECKOUT_SUCCESS_PATH || "/checkout/success",
@@ -49,7 +69,6 @@ const config = {
   },
 
   nmi: {
-    apiUrl: env.NMI_API_URL || "https://secure.nmi.com/api/transact.php",
     checkoutUrl: env.NMI_CHECKOUT_URL || "https://secure.nmi.com/api/v4/checkouts",
     // ▼ LIVE credentials come from env — placeholders in .env.example ▼
     processorAccountId: env.NMI_PROCESSOR_ACCOUNT_ID || "",
@@ -69,7 +88,8 @@ const config = {
     port: parseInt(env.SMTP_PORT || "587", 10),
     user: env.SMTP_USER || "",
     pass: env.SMTP_PASS || "",
-    from: env.RECEIPT_FROM || "Nuvamin <orders@nuvamin.com>",
+    from: env.RECEIPT_FROM || "Nuvamin <lab@nuvamin.com>",
+    support: env.SUPPORT_EMAIL || "lab@nuvamin.com",
   },
 
   adminToken: env.ADMIN_TOKEN || "",

@@ -8,7 +8,7 @@
  */
 
 const nodemailer = require("nodemailer");
-const config = require("../server/config");
+const config = require("./config");
 
 let transporter = null;
 function getTransport() {
@@ -29,10 +29,25 @@ function money(n, currency) {
   return sym + Number(n).toFixed(2);
 }
 
+function escHtml(v) {
+  return String(v == null ? "" : v)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function addressLines(order) {
+  const a = order.shippingAddress;
+  if (!a || !a.line1) return [];
+  return [a.name, a.line1, a.line2, `${a.postalCode} ${a.city}`.trim(), a.country].filter(Boolean);
+}
+
 function renderReceipt(order) {
   const lines = order.items
     .map((i) => `  ${i.quantity} x ${i.name} ${i.mg}  —  ${money(i.lineTotal, order.currency)}`)
     .join("\n");
+  const addr = addressLines(order);
   const text =
     `Thank you for your order.\n\n` +
     `Order ${order.id}\n` +
@@ -41,8 +56,10 @@ function renderReceipt(order) {
     `Subtotal: ${money(order.subtotal, order.currency)}\n` +
     `Shipping: ${order.shipping === 0 ? "Free" : money(order.shipping, order.currency)}\n` +
     `Total:    ${money(order.total, order.currency)}\n\n` +
+    (addr.length ? `Ships to:\n  ${addr.join("\n  ")}\n\n` : "") +
     `A certificate of analysis is included with every order. ` +
     `Cold-chain dispatch on dry ice.\n\n` +
+    `Questions? ${config.email.support}\n\n` +
     `— Nuvamin`;
   const html =
     `<div style="font-family:Arial,Helvetica,sans-serif;max-width:520px;color:#111">` +
@@ -61,7 +78,11 @@ function renderReceipt(order) {
     `<tr><td style="padding:8px 0;border-top:2px solid #111"><strong>Total</strong></td>` +
     `<td align="right" style="padding:8px 0;border-top:2px solid #111"><strong>${money(order.total, order.currency)}</strong></td></tr>` +
     `</table>` +
+    (addr.length
+      ? `<p style="font-size:13px;color:#333"><strong>Ships to</strong><br>${addr.map(escHtml).join("<br>")}</p>`
+      : "") +
     `<p style="color:#666;font-size:12px">A certificate of analysis is included with every order. Cold-chain dispatch on dry ice.</p>` +
+    `<p style="color:#666;font-size:12px">Questions? <a href="mailto:${escHtml(config.email.support)}">${escHtml(config.email.support)}</a></p>` +
     `</div>`;
   return { text, html };
 }
