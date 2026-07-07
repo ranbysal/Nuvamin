@@ -29,11 +29,11 @@
 <section class="section" style="padding-top:0">
   <div class="wrap">
     <div class="shop-toolbar">
-      <div class="filters" role="tablist" aria-label="Filter by category">
-        <button class="fbtn active" data-filter="all">All</button>
-        <button class="fbtn" data-filter="Metabolic">Metabolic</button>
-        <button class="fbtn" data-filter="Repair">Repair</button>
-        <button class="fbtn" data-filter="Longevity">Longevity</button>
+      <div class="filters" role="group" aria-label="Filter by category">
+        <button class="fbtn active" data-filter="all" aria-pressed="true">All</button>
+        <button class="fbtn" data-filter="Metabolic" aria-pressed="false">Metabolic</button>
+        <button class="fbtn" data-filter="Repair" aria-pressed="false">Repair</button>
+        <button class="fbtn" data-filter="Longevity" aria-pressed="false">Longevity</button>
       </div>
       <span class="shop-count" id="shop-count"></span>
     </div>
@@ -43,10 +43,12 @@
 
 <section class="section dark-band">
   <div class="wrap" style="text-align:center">
+    <div class="reveal">
     <p class="kicker no-rule" style="justify-content:center">Every order, every time</p>
     <h2 class="h-display h-lg" style="margin:20px 0 28px">The certificate<br><span class="serif-note" style="color:#B0BEC5">ships with the science.</span></h2>
     <p class="lede" style="margin:0 auto 36px">Identity by mass spectrometry, purity by HPLC, net content by amino-acid analysis. Look up your lot number online before you even open the box.</p>
     <a class="btn btn-ghost" href="about.html">How we verify <span class="arr">&rarr;</span></a>
+    </div>
   </div>
 </section>
 
@@ -70,8 +72,12 @@
 
     document.querySelectorAll(".fbtn").forEach(function (btn) {
       btn.addEventListener("click", function () {
-        document.querySelectorAll(".fbtn").forEach(function (b) { b.classList.remove("active"); });
+        document.querySelectorAll(".fbtn").forEach(function (b) {
+          b.classList.remove("active");
+          b.setAttribute("aria-pressed", "false");
+        });
         btn.classList.add("active");
+        btn.setAttribute("aria-pressed", "true");
         render(btn.getAttribute("data-filter"));
       });
     });

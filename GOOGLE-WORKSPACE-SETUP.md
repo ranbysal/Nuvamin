@@ -48,7 +48,7 @@ variables take effect.
 > `RECEIPT_FROM` doesn't match `SMTP_USER` or one of its aliases, Gmail will
 > rewrite the From header — keep them the same address to be safe.
 
-> The site pages currently show `lab@nuvamin.com` as the public email. If the
+> The site pages currently show `lab@nuvamin.bio` as the public email. If the
 > client's real address differs, tell me the final address and I'll update the
 > pages in one pass.
 

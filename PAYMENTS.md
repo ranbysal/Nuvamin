@@ -60,9 +60,11 @@ safe projection only — never the shipping address or internal event log.
 | `server/config.js` | Env loader + typed config (all credentials via env) |
 | `server/catalog.js` | Authoritative server-side prices |
 | `server/orders.js` | Order model + enforced status lifecycle + file/redis store drivers |
+| `server/sheets.js` | Google Sheets order log (posts each paid order to the client's sheet) |
+| `server/views.js` | Server-rendered markup for the mock hosted payment page |
 | `api/index.js` | Vercel serverless entry (exports the Express app) |
 | `vercel.json` | Vercel routing: API → function, pages/assets → CDN, nothing else exposed |
-| `server/email.js` | Customer receipt (SMTP, or console in dev) |
+| `server/email.js` | Customer receipts, new-order notifications, contact-form delivery (SMTP, or console in dev) |
 | `server/gateway/base.js` | The `PaymentGateway` adapter contract |
 | `server/gateway/nmi.js` | **NMI** hosted-checkout adapter |
 | `server/gateway/authorizenet.js` | Authorize.Net adapter (stub for future swap) |
@@ -82,6 +84,7 @@ safe projection only — never the shipping address or internal event log.
 | `POST /api/webhook/payment` | **Signed** webhook — authoritative status update |
 | `GET /api/orders/:id` | Public order status (for the confirmation page) |
 | `GET /admin/orders` | Admin-readable order records (`Authorization: Bearer <ADMIN_TOKEN>`) |
+| `POST /api/contact` | Contact form → company inbox (validated + rate-limited) |
 
 ## Run locally
 

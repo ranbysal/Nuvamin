@@ -43,8 +43,8 @@
     "</ul></div>" +
     '<div><h4 class="footer-h">Support</h4><ul>' +
     '<li><a href="contact.html#faq">Certificates of analysis</a></li>' +
-    '<li><a href="contact.html">Shipping &amp; cold chain</a></li>' +
-    '<li><a href="mailto:lab@nuvamin.com">lab@nuvamin.com</a></li>' +
+    '<li><a href="shipping-returns.html">Shipping &amp; cold chain</a></li>' +
+    '<li><a href="mailto:lab@nuvamin.bio">lab@nuvamin.bio</a></li>' +
     "</ul></div>" +
     "</div>" +
     '<div class="footer-word" aria-hidden="true">Nuvamin</div>' +
@@ -251,6 +251,11 @@
     var href = a.getAttribute("href");
     if (!href || href.charAt(0) === "#" || a.target === "_blank" ||
         /^(https?:|mailto:|tel:)/.test(href)) return;
+    // Same-page fragment link (e.g. the footer's shop.html#metabolic while
+    // already on shop.html): no real navigation happens, so fading out would
+    // leave the page invisible. Let the browser handle it natively.
+    var dest = new URL(href, location.href);
+    if (dest.pathname === location.pathname && dest.hash) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     e.preventDefault();
     document.body.classList.add("page-out");
@@ -265,8 +270,16 @@
   var CART_KEY = "nuvamin-cart";
 
   function cartRead() {
-    try { return JSON.parse(localStorage.getItem(CART_KEY)) || {}; }
+    var cart;
+    try { cart = JSON.parse(localStorage.getItem(CART_KEY)) || {}; }
     catch (e) { return {}; }
+    // Prune ids that are no longer in the catalogue so the header badge,
+    // the cart page and the checkout payload always agree (carts persist
+    // in localStorage across catalogue changes).
+    if (typeof nvFindProduct === "function") {
+      for (var id in cart) if (!nvFindProduct(id)) delete cart[id];
+    }
+    return cart;
   }
   function cartWrite(cart) {
     localStorage.setItem(CART_KEY, JSON.stringify(cart));
@@ -360,7 +373,7 @@
     var form = e.target;
     if (form.matches("[data-newsletter]")) {
       e.preventDefault();
-      form.innerHTML = '<p class="news-ok">Confirmed. The next lot report lands in your inbox.</p>';
+      form.innerHTML = '<p class="news-ok" role="status">Confirmed. The next lot report lands in your inbox.</p>';
     }
     if (form.matches("[data-contact]")) {
       e.preventDefault();
@@ -381,7 +394,7 @@
       }).then(function (res) {
         return res.json().catch(function () { return {}; }).then(function (body) {
           if (res.ok) {
-            form.innerHTML = '<p class="form-ok">Received &mdash; a member of the lab team replies within one working day.</p>';
+            form.innerHTML = '<p class="form-ok" role="status">Received &mdash; a member of the lab team replies within one working day.</p>';
           } else {
             toast(body.error || "We couldn't send your message. Please email us directly.");
             if (btn) { btn.disabled = false; btn.innerHTML = 'Send message <span class="arr">&rarr;</span>'; }

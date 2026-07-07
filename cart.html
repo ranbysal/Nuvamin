@@ -63,10 +63,11 @@
 
       if (!ids.length) {
         root.innerHTML =
-          '<div class="cart-empty">' +
+          '<div class="cart-empty' + (firstRender ? ' cart-enter' : '') + '">' +
           "<p>Your cart is empty &mdash; a state of great potential.</p>" +
           '<a class="btn" href="shop.html">Browse the range <span class="arr">&rarr;</span></a>' +
           "</div>";
+        firstRender = false;
         return;
       }
 
@@ -78,7 +79,7 @@
           '<div class="cart-line">' +
           '<a class="cart-thumb" href="product.html?id=' + p.id + '">' + nvProductImg(p) + "</a>" +
           "<div><h3>" + p.name + " " + p.mg + '</h3><p class="sub">' + p.sub + " &middot; " + p.form + '</p>' +
-          '<button class="remove" data-remove="' + p.id + '">Remove</button></div>' +
+          '<button class="remove" data-remove="' + p.id + '" aria-label="Remove ' + p.name + ' ' + p.mg + ' from cart">Remove</button></div>' +
           '<div class="qty"><button data-dec="' + p.id + '" aria-label="Decrease quantity of ' + p.name + '">&minus;</button><output>' + q + '</output><button data-inc="' + p.id + '" aria-label="Increase quantity of ' + p.name + '">+</button></div>' +
           '<span class="cart-line-price">' + eur(p.price * q) + "</span>" +
           "</div>"
@@ -92,7 +93,7 @@
         : eur(FREE_SHIP - subtotal) + " away from free shipping.";
 
       root.innerHTML =
-        '<div class="cart-layout">' +
+        '<div class="cart-layout' + (firstRender ? ' cart-enter' : '') + '">' +
         '<div class="cart-lines">' + lines + "</div>" +
         '<aside class="cart-summary"><h2>Summary</h2>' +
         '<div class="sum-row"><span>Subtotal</span><span>' + eur(subtotal) + "</span></div>" +
@@ -118,6 +119,7 @@
         var el = document.getElementById("co-" + k);
         if (el && saved[k]) el.value = saved[k];
       });
+      firstRender = false;
     }
 
     function fieldVal(k) {
@@ -126,6 +128,7 @@
     }
 
     var busy = false;
+    var firstRender = true;
     async function checkout() {
       if (busy) return;
       var cart = nvCart.read();

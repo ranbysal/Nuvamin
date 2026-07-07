@@ -88,12 +88,12 @@ const config = {
     port: parseInt(env.SMTP_PORT || "587", 10),
     user: env.SMTP_USER || "",
     pass: env.SMTP_PASS || "",
-    from: env.RECEIPT_FROM || "Nuvamin <lab@nuvamin.com>",
-    support: env.SUPPORT_EMAIL || "lab@nuvamin.com",
+    from: env.RECEIPT_FROM || "Nuvamin <lab@nuvamin.bio>",
+    support: env.SUPPORT_EMAIL || "lab@nuvamin.bio",
     // Where contact-form messages land (the company inbox).
-    contactTo: env.CONTACT_TO || env.SUPPORT_EMAIL || "lab@nuvamin.com",
+    contactTo: env.CONTACT_TO || env.SUPPORT_EMAIL || "lab@nuvamin.bio",
     // Where new-paid-order notifications land (the company inbox).
-    orderNotify: env.ORDER_NOTIFY_EMAIL || env.SUPPORT_EMAIL || "lab@nuvamin.com",
+    orderNotify: env.ORDER_NOTIFY_EMAIL || env.SUPPORT_EMAIL || "lab@nuvamin.bio",
   },
 
   // Google Sheets order log — an Apps Script web-app URL (see GOOGLE-WORKSPACE-SETUP.md).

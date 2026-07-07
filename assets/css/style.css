@@ -421,11 +421,12 @@ body.hero-go .hero-baseline { animation: heroFadeUp 1.05s 1.4s var(--ease) forwa
   backdrop-filter: blur(4px);
 }
 /* cards flex so metas align and buttons share one baseline across a row */
-.pcard { display: flex; flex-direction: column; }
+.pcard { display: flex; flex-direction: column; min-width: 0; }
 .pcard-meta { padding: 18px 2px 0; display: flex; flex-direction: column; flex: 1; }
 .pcard-add { margin-top: auto; }
-.pcard-row { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.pcard-row { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 2px 12px; min-width: 0; }
 .pcard-name { font-family: var(--display); font-size: 16px; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; }
+.pcard-name a { transition: color 0.3s; }
 .pcard-name a:hover { color: var(--slate); }
 .pcard-price { font-family: var(--display); font-size: 14px; color: var(--ink-60); }
 .pcard-sub { font-size: 13px; color: var(--ink-60); margin: 4px 0 16px; }
@@ -749,6 +750,8 @@ body.hero-go .hero-baseline { animation: heroFadeUp 1.05s 1.4s var(--ease) forwa
   letter-spacing: 0.2em;
   text-transform: uppercase;
 }
+.acc-btn { transition: color 0.3s; }
+.acc-btn:hover { color: var(--slate); }
 .acc-btn .acc-x { font-size: 18px; font-weight: 400; transition: transform 0.4s var(--ease); }
 .acc-item.open .acc-x { transform: rotate(45deg); }
 .acc-panel { max-height: 0; overflow: hidden; transition: max-height 0.5s var(--ease); }
@@ -784,7 +787,7 @@ body.hero-go .hero-baseline { animation: heroFadeUp 1.05s 1.4s var(--ease) forwa
 .cart-thumb img { max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; filter: drop-shadow(0 4px 5px rgba(0, 0, 0, 0.10)); }
 .cart-line h3 { font-family: var(--display); font-size: 15px; font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase; }
 .cart-line .sub { font-size: 12.5px; color: var(--ink-60); }
-.cart-line .remove { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; font-family: var(--display); color: var(--ink-40); margin-top: 8px; }
+.cart-line .remove { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; font-family: var(--display); color: var(--ink-40); margin-top: 8px; transition: color 0.3s; }
 .cart-line .remove:hover { color: var(--ink); text-decoration: underline; }
 .cart-line-price { font-family: var(--display); font-size: 15px; }
 .cart-summary { background: var(--cream); border: 1px solid var(--line-soft); padding: clamp(24px, 2.5vw, 40px); position: sticky; top: 100px; }
@@ -796,6 +799,10 @@ body.hero-go .hero-baseline { animation: heroFadeUp 1.05s 1.4s var(--ease) forwa
 .co-email { width: 100%; border: 0; border-bottom: 1px solid var(--line); background: transparent; padding: 11px 2px; font: inherit; color: var(--ink); outline: none; border-radius: 0; transition: border-color 0.3s; }
 .co-email:focus { border-color: var(--ink); }
 .co-grid { display: grid; grid-template-columns: 1fr 1.4fr; gap: 0 16px; }
+
+/* underlined text links (legal pages, result pages) */
+.inline-link { border-bottom: 1px solid var(--line); transition: color 0.3s, border-color 0.3s; }
+.inline-link:hover { color: var(--ink); border-color: var(--ink); }
 
 /* ---------- legal / policy prose ---------- */
 
@@ -903,7 +910,7 @@ body.hero-go .hero-baseline { animation: heroFadeUp 1.05s 1.4s var(--ease) forwa
   transition: border-color 0.3s;
   border-radius: 0;
 }
-.cform input:focus, .cform textarea:focus { border-color: var(--ink); }
+.cform input:focus, .cform textarea:focus, .cform select:focus { border-color: var(--ink); }
 .cform textarea { min-height: 120px; resize: vertical; }
 .contact-cards { display: grid; gap: 14px; }
 .contact-card { border: 1px solid var(--line); padding: clamp(22px, 2.4vw, 36px); }
@@ -951,6 +958,33 @@ body.hero-go .page-hero .lede { animation: heroFadeUp 1s 0.55s var(--ease) forwa
 @keyframes pageTitleIn {
   to { opacity: 1; clip-path: inset(-8% -5% -12% -5%); transform: none; }
 }
+
+/* ---------- product-page load choreography (mirrors .page-hero) ---------- */
+
+.pdp-media-col { opacity: 0; }
+body.hero-go .pdp-media-col { animation: heroFadeUp 1.1s 0.15s var(--ease) forwards; }
+.pdp-info > * { opacity: 0; }
+body.hero-go .pdp-info > * { animation: heroFadeUp 1s 0.6s var(--ease) forwards; }
+body.hero-go .pdp-info > .pdp-cat { animation: heroFadeUp 0.9s 0.2s var(--ease) forwards; }
+body.hero-go .pdp-info > .pdp-sub { animation: heroFadeUp 1s 0.5s var(--ease) forwards; }
+.pdp-info .pdp-title { opacity: 0; clip-path: inset(-8% -5% 102% -5%); transform: translateY(0.18em); }
+body.hero-go .pdp-info > .pdp-title { animation: pageTitleIn 1.25s 0.3s cubic-bezier(0.19, 1, 0.22, 1) forwards; }
+
+/* ---------- result-page load choreography (confirmation / failed / 404) ---------- */
+
+.result > * { opacity: 0; }
+body.hero-go .result > * { animation: heroFadeUp 0.85s var(--ease) forwards; }
+body.hero-go .result > :nth-child(1) { animation-delay: 0.08s; }
+body.hero-go .result > :nth-child(2) { animation-delay: 0.16s; }
+body.hero-go .result > :nth-child(4) { animation-delay: 0.42s; }
+body.hero-go .result > :nth-child(5) { animation-delay: 0.5s; }
+body.hero-go .result > :nth-child(n+6) { animation-delay: 0.58s; }
+.result h1 { opacity: 0; clip-path: inset(-8% -5% 102% -5%); transform: translateY(0.18em); }
+/* stronger than the nth-child stagger rules so the title always unmasks */
+body.hero-go .page-hero .result h1 { animation: pageTitleIn 1.15s 0.26s cubic-bezier(0.19, 1, 0.22, 1) forwards; }
+
+/* cart content: gentle entrance on first render only (re-renders skip it) */
+.cart-enter { animation: heroFadeUp 0.8s 0.15s var(--ease) both; }
 
 /* ---------- scroll progress hairline ---------- */
 
@@ -1012,7 +1046,9 @@ body.page-out { opacity: 0; transition: opacity 0.24s ease; }
   .hero-render img { filter: drop-shadow(0 42px 34px rgba(0, 0, 0, 0.16)) !important; }
   .vial-glow { display: none !important; }
   .hero-word, .vial-rig { transform: none !important; }
-  .page-hero .kicker, .page-hero .h-display, .page-hero .lede {
+  .page-hero .kicker, .page-hero .h-display, .page-hero .lede,
+  .pdp-media-col, .pdp-info > *, .pdp-info .pdp-title,
+  .result > *, .result h1, .cart-enter {
     animation: none !important; opacity: 1 !important; clip-path: none !important; transform: none !important;
   }
   .ambient, .ambient img { animation: none !important; transition: none; }
