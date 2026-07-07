@@ -16,7 +16,7 @@ const CATALOG = {
   "ghk-cu-100": { name: "GHK-Cu", mg: "100MG", price: 55 },
   "bpc-157": { name: "BPC-157", mg: "10MG", price: 45 },
   "tb-500": { name: "TB-500", mg: "5MG", price: 55 },
-  nad: { name: "NAD+", mg: "5MG", price: 65 },
+  nad: { name: "NAD+", mg: "500MG", price: 70 },
 };
 
 // USD. Flat $6 shipping, free at $60+.

@@ -201,9 +201,9 @@ const NV_PRODUCTS = [
     name: "NAD+",
     sub: "Nicotinamide adenine dinucleotide",
     category: "Longevity",
-    mg: "5MG",
+    mg: "500MG",
     form: "Lyophilised powder",
-    price: 65,
+    price: 70,
     panel: "#E7ECEF",
     blurb:
       "Research-grade nicotinamide adenine dinucleotide for cellular-energetics and longevity studies. Lyophilised, HPLC-verified and cold-chain shipped to protect stability in transit.",
@@ -213,7 +213,7 @@ const NV_PRODUCTS = [
       { k: "CAS", v: "53-84-9" },
       { k: "Molecular formula", v: "C21H27N7O14P2" },
       { k: "Molar mass", v: "663.43 g/mol" },
-      { k: "Presentation", v: "5 mg lyophilised, single vial" },
+      { k: "Presentation", v: "500 mg lyophilised, single vial" },
       { k: "Storage", v: "−20 °C, desiccated, protected from light" }
     ]
   }

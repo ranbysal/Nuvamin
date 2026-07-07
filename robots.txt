@@ -8,4 +8,4 @@ Disallow: /api/
 Disallow: /checkout/
 Disallow: /mock-hosted
 
-Sitemap: https://nuvamin.vercel.app/sitemap.xml
+Sitemap: https://nuvamin.bio/sitemap.xml

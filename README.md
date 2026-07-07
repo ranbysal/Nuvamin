@@ -78,8 +78,10 @@ the Express API as a serverless function (`api/index.js` + `vercel.json`).
    [GOOGLE-WORKSPACE-SETUP.md](GOOGLE-WORKSPACE-SETUP.md).
 5. **Register the webhook** in the NMI portal:
    `https://YOUR_DOMAIN/api/webhook/payment`.
-6. **Update the domain** in `sitemap.xml`, `robots.txt` and the `og:image`
-   meta tags (currently `https://nuvamin.vercel.app`).
+6. **Domain** — `sitemap.xml`, `robots.txt` and the `og:image` meta tags are
+   set to the production domain `https://nuvamin.bio`. Remember to set
+   `PUBLIC_BASE_URL=https://nuvamin.bio` in Vercel so payment return and
+   webhook URLs use it too.
 
 ## Before go-live checklist
 
