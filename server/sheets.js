@@ -21,20 +21,27 @@ const config = require("./config");
 
 function rowFor(order) {
   const a = order.shippingAddress || {};
+  const addressLines = [a.name, a.line1, a.line2, `${a.postalCode || ""} ${a.city || ""}`.trim(), a.country].filter(Boolean);
   return {
     orderId: order.id,
     placedAt: order.createdAt,
     status: order.status,
     customerName: order.customer.name || "",
     customerEmail: order.customer.email || "",
-    items: order.items.map((i) => `${i.quantity}x ${i.name} ${i.mg}`).join("; "),
+    // Multiline for the sheet cell; itemsDetailed for the shipped email.
+    items: order.items.map((i) => `${i.quantity} × ${i.name} ${i.mg}`).join("\n"),
+    itemsDetailed: order.items.map((i) => ({
+      id: i.id,
+      name: i.name,
+      mg: i.mg,
+      quantity: i.quantity,
+      lineTotal: i.lineTotal,
+    })),
     subtotal: order.subtotal,
     shipping: order.shipping,
     total: order.total,
     currency: order.currency,
-    address: [a.line1, a.line2, `${a.postalCode || ""} ${a.city || ""}`.trim(), a.country]
-      .filter(Boolean)
-      .join(", "),
+    address: addressLines.join("\n"),
     transactionId: (order.payment && order.payment.transactionId) || "",
     provider: (order.payment && order.payment.provider) || "",
   };

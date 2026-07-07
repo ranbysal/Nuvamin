@@ -12,7 +12,8 @@ What gets wired up:
 | Contact-form messages | Company inbox (`CONTACT_TO`), Reply-To set to the visitor |
 | Customer receipt on paid order | Customer's email, **from** the company address |
 | "New paid order" notification | Company inbox (`ORDER_NOTIFY_EMAIL`) with items, totals, shipping address |
-| Order log | A Google Sheet the client owns — one row per paid order |
+| Orders & fulfilment board | A Google Sheet the client owns — one row per paid order, with a Fulfilled checkbox |
+| "It's on the way" email | Sent from the client's Gmail automatically when Fulfilled is ticked |
 
 ---
 
@@ -54,67 +55,59 @@ variables take effect.
 
 ---
 
-## Part 2 — Order log in Google Sheets
+## Part 2 — Orders & fulfilment board in Google Sheets
 
-The server posts each **paid** order to a tiny script attached to the client's
-own spreadsheet. The client owns the sheet; no Google API keys are involved.
+Each **paid** order lands as a row in a Google Sheet the client owns —
+formatted as a fulfilment board. A team member packs the order, optionally
+enters a **Tracking #** and **Carrier**, then ticks the **Fulfilled ✓**
+checkbox — and the customer instantly receives the designed
+*"It's on the way"* email, sent from this Google account's Gmail, with a
+Track Package button when the carrier is UPS / USPS / FedEx / DHL.
 
-**1. Create the sheet** — [sheets.new](https://sheets.new), name it e.g.
+The full script lives in this repo at **`google/nuvamin-orders.gs`**.
+
+**1. Create the sheet** — [sheets.new](https://sheets.new), name it
 *Nuvamin Orders*.
 
-**2. Attach the script** — in the sheet: **Extensions → Apps Script**, delete
-whatever is in the editor, paste this, and change `SECRET` to any long random
-string:
+**2. Attach the script** — **Extensions → Apps Script**, delete what's in the
+editor, paste the entire contents of `google/nuvamin-orders.gs`, and change
+the `SECRET` line to any long random string. (Check `SUPPORT_EMAIL` at the
+top too — it's the Reply-To on shipping emails.) Save.
 
-```javascript
-// Nuvamin order log — receives one row per paid order from the website.
-const SECRET = "CHANGE_ME_TO_A_LONG_RANDOM_STRING";
+**3. Run `setup()` once** — in the toolbar, select `setup` in the function
+dropdown → **Run** → authorize when prompted (it needs Sheets + Gmail because
+it sends the shipping email as this account). This formats the board
+(black header, status colours, Fulfilled checkboxes, hidden data column) and
+installs the fulfilment trigger. Safe to re-run any time.
 
-const HEADERS = [
-  "Order ID", "Placed at", "Status", "Customer name", "Customer email",
-  "Items", "Subtotal", "Shipping", "Total", "Currency", "Ship to",
-  "Transaction ID", "Provider"
-];
-
-function doPost(e) {
-  const body = JSON.parse(e.postData.contents);
-  if (body.secret !== SECRET) {
-    return ContentService.createTextOutput("forbidden").setMimeType(ContentService.MimeType.TEXT);
-  }
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];
-  if (sheet.getLastRow() === 0) sheet.appendRow(HEADERS);
-  const r = body.row;
-  sheet.appendRow([
-    r.orderId, r.placedAt, r.status, r.customerName, r.customerEmail,
-    r.items, r.subtotal, r.shipping, r.total, r.currency, r.address,
-    r.transactionId, r.provider
-  ]);
-  return ContentService.createTextOutput(JSON.stringify({ ok: true }))
-    .setMimeType(ContentService.MimeType.JSON);
-}
-```
-
-**3. Deploy it** — blue **Deploy → New deployment** → gear icon → **Web app**:
+**4. Deploy the order receiver** — blue **Deploy → New deployment** → gear →
+**Web app**:
 - *Execute as*: **Me**
-- *Who has access*: **Anyone** (required so the server can POST; the shared
-  secret is what gates writes)
-- **Deploy**, authorize when prompted, then **copy the Web app URL**
-  (`https://script.google.com/macros/s/…/exec`).
+- *Who has access*: **Anyone** (required so the site can POST; the shared
+  secret gates writes)
+- **Deploy** → copy the Web app URL (`https://script.google.com/macros/s/…/exec`).
 
-**4. In Vercel**, add:
+**5. In Vercel**, add and redeploy:
 
 | Key | Value |
 | --- | --- |
-| `SHEETS_WEBHOOK_URL` | the Web app URL from step 3 |
+| `SHEETS_WEBHOOK_URL` | the Web app URL from step 4 |
 | `SHEETS_WEBHOOK_SECRET` | the same string you put in `SECRET` |
 
-Redeploy again.
+### Day-to-day for the fulfilment team
 
-> To change columns later: edit the script, then **Deploy → Manage
-> deployments → edit (pencil) → Version: New version → Deploy** — the URL
-> stays the same.
+1. New paid orders appear automatically — amber **NEW — TO FULFIL** status,
+   with items, quantities, full shipping address, total and contact email.
+2. Pack the order. Type the tracking number into **Tracking #** and the
+   carrier (e.g. `UPS`) into **Carrier**.
+3. Tick **Fulfilled ✓**. The row turns green **SHIPPED ✓**, gets a
+   timestamp, and the customer's shipping-confirmation email sends
+   immediately (a toast in the corner confirms who it went to).
+4. Ticking the box on an already-shipped row does nothing — the email can
+   never send twice.
 
----
+> To change the script later: edit it, then **Deploy → Manage deployments →
+> pencil → Version: New version → Deploy** — the URL stays the same.
 
 ## Part 3 — Test it (5 minutes)
 
@@ -125,7 +118,9 @@ Redeploy again.
    - customer email receives the receipt **from the company address**,
    - `ORDER_NOTIFY_EMAIL` receives the "New order NV-… (paid)" alert with the
      shipping address,
-   - one new row appears in the Google Sheet.
+   - a new amber **NEW — TO FULFIL** row appears on the orders board;
+   - tick **Fulfilled ✓** on that row: it turns green and the shipped email
+     (with tracking, if entered) arrives at the customer address.
 3. If any email doesn't arrive: check Vercel → the deployment → **Functions
    logs** — SMTP and sheet errors are logged there with the reason.
 
