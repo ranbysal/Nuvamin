@@ -339,7 +339,7 @@
     btn.setAttribute("aria-expanded", open ? "true" : "false");
   });
 
-  /* ---------- newsletter + contact fake submit ---------- */
+  /* ---------- newsletter (local) + contact (server) submit ---------- */
 
   document.addEventListener("submit", function (e) {
     var form = e.target;
@@ -349,7 +349,33 @@
     }
     if (form.matches("[data-contact]")) {
       e.preventDefault();
-      form.innerHTML = '<p class="form-ok">Received &mdash; a member of the lab team replies within one working day.</p>';
+      var btn = form.querySelector('button[type="submit"]');
+      var data = {
+        name: (form.name && form.name.value || "").trim(),
+        email: (form.email && form.email.value || "").trim(),
+        institution: (form.institution && form.institution.value || "").trim(),
+        topic: (form.topic && form.topic.value || "").trim(),
+        message: (form.message && form.message.value || "").trim()
+      };
+      if (btn) { btn.disabled = true; btn.textContent = "Sending…"; }
+      var apiBase = window.NUVAMIN_API_BASE || "";
+      fetch(apiBase + "/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+      }).then(function (res) {
+        return res.json().catch(function () { return {}; }).then(function (body) {
+          if (res.ok) {
+            form.innerHTML = '<p class="form-ok">Received &mdash; a member of the lab team replies within one working day.</p>';
+          } else {
+            toast(body.error || "We couldn't send your message. Please email us directly.");
+            if (btn) { btn.disabled = false; btn.innerHTML = 'Send message <span class="arr">&rarr;</span>'; }
+          }
+        });
+      }).catch(function () {
+        toast("We couldn't send your message. Please email us directly.");
+        if (btn) { btn.disabled = false; btn.innerHTML = 'Send message <span class="arr">&rarr;</span>'; }
+      });
     }
   });
 

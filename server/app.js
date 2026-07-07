@@ -24,6 +24,7 @@ const config = require("./config");
 const catalog = require("./catalog");
 const orders = require("./orders");
 const email = require("./email");
+const sheets = require("./sheets");
 const { getGateway } = require("./gateway");
 const { MOCK_PAGE } = require("./views");
 
@@ -50,24 +51,26 @@ console.log(`[nuvamin] payment provider: ${gateway.name}`);
 
 /* ------------------------------------------------------------ rate limit */
 
-// Minimal in-memory limiter for checkout creation. Per-instance (resets on
-// deploy / new serverless instance) — enough to blunt abuse of order creation.
-const RATE_WINDOW_MS = 60_000;
-const RATE_MAX = 10;
-const rateBuckets = new Map();
-
-function rateLimitCheckout(req, res, next) {
-  const now = Date.now();
-  const ip = req.ip || "unknown";
-  const hits = (rateBuckets.get(ip) || []).filter((t) => now - t < RATE_WINDOW_MS);
-  if (hits.length >= RATE_MAX) {
-    return res.status(429).json({ error: "Too many checkout attempts. Please wait a minute." });
-  }
-  hits.push(now);
-  rateBuckets.set(ip, hits);
-  if (rateBuckets.size > 10_000) rateBuckets.clear(); // crude memory cap
-  next();
+// Minimal in-memory limiter. Per-instance (resets on deploy / new serverless
+// instance) — enough to blunt abuse of order creation and the contact form.
+function makeRateLimit(max, windowMs, message) {
+  const buckets = new Map();
+  return (req, res, next) => {
+    const now = Date.now();
+    const ip = req.ip || "unknown";
+    const hits = (buckets.get(ip) || []).filter((t) => now - t < windowMs);
+    if (hits.length >= max) {
+      return res.status(429).json({ error: message });
+    }
+    hits.push(now);
+    buckets.set(ip, hits);
+    if (buckets.size > 10_000) buckets.clear(); // crude memory cap
+    next();
+  };
 }
+
+const rateLimitCheckout = makeRateLimit(10, 60_000, "Too many checkout attempts. Please wait a minute.");
+const rateLimitContact = makeRateLimit(5, 60_000, "Too many messages. Please wait a minute and try again.");
 
 /* ------------------------------------------------------------ validation */
 
@@ -151,6 +154,31 @@ app.post("/api/checkout", rateLimitCheckout, async (req, res) => {
   }
 });
 
+/* ----------------------------------------------------------------- contact */
+
+// Contact form → company inbox (CONTACT_TO). Reply-To is the visitor, so
+// replies go straight back to them from the client's mailbox.
+app.post("/api/contact", rateLimitContact, async (req, res) => {
+  const b = req.body || {};
+  const msg = {
+    name: cleanStr(b.name, 120),
+    email: cleanStr(b.email, 200),
+    institution: cleanStr(b.institution, 200),
+    topic: cleanStr(b.topic, 120),
+    message: cleanStr(b.message, 5000),
+  };
+  if (!msg.name) return res.status(400).json({ error: "Please tell us your name." });
+  if (!EMAIL_RE.test(msg.email)) return res.status(400).json({ error: "Please enter a valid email so we can reply." });
+  if (!msg.message) return res.status(400).json({ error: "Please write a message." });
+  try {
+    await email.sendContactMessage(msg);
+    return res.json({ ok: true });
+  } catch (e) {
+    console.error("[contact] send failed:", e.message);
+    return res.status(502).json({ error: "We couldn't send your message right now. Please email us directly." });
+  }
+});
+
 /* ------------------------------------------------------- gateway returns */
 
 // Success return: the browser is back, but we do NOT mark paid here — the
@@ -203,6 +231,14 @@ app.post(config.paths.webhook, async (req, res) => {
       } catch (e) {
         console.error("[webhook] receipt send failed:", e.message);
       }
+      // Company-side hooks: notify the inbox + append to the order sheet.
+      // Neither may break payment processing — failures are logged only.
+      try {
+        await email.sendOrderNotification(updated);
+      } catch (e) {
+        console.error("[webhook] order notification failed:", e.message);
+      }
+      await sheets.logOrder(updated);
     }
   } else if (event.type === "failed") {
     await orders.setStatus(order.id, orders.STATUS.FAILED, { transactionId: event.transactionId }, "webhook:failed");

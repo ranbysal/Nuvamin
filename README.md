@@ -72,9 +72,13 @@ the Express API as a serverless function (`api/index.js` + `vercel.json`).
      gateway refuses to run in production)
    - `ADMIN_TOKEN` — long random string protecting `/admin/orders`
    - `SMTP_HOST/PORT/USER/PASS`, `RECEIPT_FROM`, `SUPPORT_EMAIL` — real receipts
-4. **Register the webhook** in the NMI portal:
+4. **Connect Google Workspace email + the order sheet** — contact-form
+   delivery, customer receipts from the company address, new-order alerts,
+   and the Google Sheets order log are all env-driven. Copy-paste setup:
+   [GOOGLE-WORKSPACE-SETUP.md](GOOGLE-WORKSPACE-SETUP.md).
+5. **Register the webhook** in the NMI portal:
    `https://YOUR_DOMAIN/api/webhook/payment`.
-5. **Update the domain** in `sitemap.xml`, `robots.txt` and the `og:image`
+6. **Update the domain** in `sitemap.xml`, `robots.txt` and the `og:image`
    meta tags (currently `https://nuvamin.vercel.app`).
 
 ## Before go-live checklist

@@ -90,6 +90,16 @@ const config = {
     pass: env.SMTP_PASS || "",
     from: env.RECEIPT_FROM || "Nuvamin <lab@nuvamin.com>",
     support: env.SUPPORT_EMAIL || "lab@nuvamin.com",
+    // Where contact-form messages land (the company inbox).
+    contactTo: env.CONTACT_TO || env.SUPPORT_EMAIL || "lab@nuvamin.com",
+    // Where new-paid-order notifications land (the company inbox).
+    orderNotify: env.ORDER_NOTIFY_EMAIL || env.SUPPORT_EMAIL || "lab@nuvamin.com",
+  },
+
+  // Google Sheets order log — an Apps Script web-app URL (see GOOGLE-WORKSPACE-SETUP.md).
+  sheets: {
+    webhookUrl: env.SHEETS_WEBHOOK_URL || "",
+    secret: env.SHEETS_WEBHOOK_SECRET || "",
   },
 
   adminToken: env.ADMIN_TOKEN || "",
