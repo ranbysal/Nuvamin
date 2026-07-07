@@ -13,9 +13,10 @@ adapter** so the processor can be swapped without touching the rest of the app.
 
 ```
 Browser (cart.html)
-   │  POST /api/checkout   { cart, customer.email }
+   │  POST /api/checkout   { cart, customer.email, shipping address }
    ▼
 Server  ── prices order from server-side catalog (client price is never trusted)
+        ── validates email + shipping address server-side
         ── creates a PENDING order   (backend order creation BEFORE payment)
         ── gateway.createCheckoutSession(order)   →  { redirectUrl }
    │  302 redirect
@@ -29,20 +30,38 @@ Hosted gateway page (NMI / Authorize.Net / built-in mock)
 ```
 
 ### Order status model
+
 `pending → paid | failed | cancelled | refunded`
+
+Transitions are **enforced** (`server/orders.js`): `pending` can move to
+`paid/failed/cancelled`; `failed` and `cancelled` can still move to `paid`
+(a retry or a late authoritative webhook); `paid` only ever moves to
+`refunded`. A replayed or out-of-order webhook can never downgrade a paid
+order, and the receipt sends exactly once — on the transition that applied.
 
 The **webhook is authoritative** for `paid`. The browser return URL only shows a
 confirmation page that polls order status — a customer who closes the tab still
 gets marked paid by the webhook, and the receipt still sends.
 
+### Order storage
+
+`ORDER_STORE=file` (default locally) keeps orders in `server/data/orders.json`.
+`ORDER_STORE=redis` uses Upstash Redis (`UPSTASH_REDIS_REST_URL/TOKEN` — the
+Vercel Upstash integration injects them, and the store then defaults to redis
+automatically). On Vercel the file store refuses to boot: the serverless
+filesystem is ephemeral. The public `GET /api/orders/:id` endpoint returns a
+safe projection only — never the shipping address or internal event log.
+
 ## Files
 
 | Path | Purpose |
 | --- | --- |
-| `server/app.js` | Express app: routes, static hosting |
+| `server/app.js` | Express app: routes, validation, rate limiting, static hosting (allowlisted) |
 | `server/config.js` | Env loader + typed config (all credentials via env) |
 | `server/catalog.js` | Authoritative server-side prices |
-| `server/orders.js` | Order model + status lifecycle + JSON store |
+| `server/orders.js` | Order model + enforced status lifecycle + file/redis store drivers |
+| `api/index.js` | Vercel serverless entry (exports the Express app) |
+| `vercel.json` | Vercel routing: API → function, pages/assets → CDN, nothing else exposed |
 | `server/email.js` | Customer receipt (SMTP, or console in dev) |
 | `server/gateway/base.js` | The `PaymentGateway` adapter contract |
 | `server/gateway/nmi.js` | **NMI** hosted-checkout adapter |
@@ -104,11 +123,25 @@ the `getHostedPaymentPageRequest` call in `server/gateway/authorizenet.js`
 (Accept Hosted flow). No other code changes — the app only talks to the adapter
 interface.
 
+## Security posture
+
+- **Fail-fast provider selection** — a real provider without complete
+  credentials (or the mock provider in production) refuses to boot; payments
+  can never silently degrade to the forgeable simulated gateway. The
+  `/mock-hosted` routes are only mounted when the mock provider is active.
+- **Static allowlist** — the Express host serves only pages, `assets/` and SEO
+  files. `server/`, order data, `package.json`, docs and dotfiles are never
+  reachable over HTTP (Vercel's routing enforces the same boundary).
+- **Webhook signatures** verified with a constant-time HMAC compare; the admin
+  token uses `crypto.timingSafeEqual` too.
+- **Input hardening** — server-side email + shipping-address validation, 32 kb
+  body cap, and per-IP rate limiting on `POST /api/checkout`.
+- All dynamic values in the mock hosted page are HTML-escaped.
+
 ## Notes & production hardening
 
-- The JSON order store (`server/data/orders.json`) is fine for a single host /
-  demo. For production, replace the internals of `server/orders.js` with a real
-  database — the rest of the app is unaffected.
+- Use `ORDER_STORE=redis` (Upstash) for production — see README's Vercel
+  section. The file store is for local development / single-host demos.
 - If the storefront is hosted separately from the API, set
   `window.NUVAMIN_API_BASE = "https://api.yourdomain.com"` before the page
   scripts, and the checkout/confirmation calls will target that origin.
