@@ -115,17 +115,31 @@
     var word = hero.querySelector(".hero-word");
     var amb = hero.querySelector(".ambient");
 
-    // mask the light layers to the hero vial's silhouette
+    // Mask the light layers to the hero vial's silhouette. The mask is only
+    // enabled AFTER the vial image has fully decoded — applying it earlier
+    // lets the gradient layers paint unmasked for a frame (or longer on a
+    // slow load), which reads as a grey box around the vial.
     var maskOK = "maskImage" in document.body.style || "webkitMaskImage" in document.body.style;
     if (maskOK && rig) {
       var img = rig.querySelector("img");
-      var url = img ? 'url("' + img.getAttribute("src") + '")' : "";
-      [light, sweep].forEach(function (el) {
-        if (!el) return;
-        el.style.webkitMaskImage = url;
-        el.style.maskImage = url;
-      });
-      document.body.classList.add("mask-ok");
+      if (img) {
+        var applyMask = function () {
+          if (!img.naturalWidth) return; // image failed — leave layers hidden
+          var url = 'url("' + img.getAttribute("src") + '")';
+          [light, sweep].forEach(function (el) {
+            if (!el) return;
+            el.style.webkitMaskImage = url;
+            el.style.maskImage = url;
+          });
+          document.body.classList.add("mask-ok");
+        };
+        var whenLoaded = img.complete
+          ? Promise.resolve()
+          : new Promise(function (res) { img.addEventListener("load", res, { once: true }); });
+        whenLoaded
+          .then(function () { return img.decode ? img.decode() : null; })
+          .then(applyMask, function () { applyMask(); });
+      }
     }
 
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
@@ -154,7 +168,8 @@
       if (light) {
         light.style.backgroundPosition =
           (50 + cx * 34).toFixed(2) + "% " + (46 + cy * 30).toFixed(2) + "%";
-        light.style.opacity = inside ? 0.6 : 0;
+        // Never reveal the light layer unless its silhouette mask is active.
+        light.style.opacity = inside && document.body.classList.contains("mask-ok") ? 0.6 : 0;
       }
       if (word) {
         word.style.transform =
