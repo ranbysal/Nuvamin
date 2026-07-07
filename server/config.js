@@ -37,7 +37,7 @@ const IS_PRODUCTION = env.NODE_ENV === "production" || env.VERCEL_ENV === "produ
 const config = {
   port: parseInt(env.PORT || "3000", 10),
   publicBaseUrl: PUBLIC_BASE_URL,
-  currency: env.CURRENCY || "EUR",
+  currency: env.CURRENCY || "USD",
 
   onVercel: ON_VERCEL,
   isProduction: IS_PRODUCTION,

@@ -48,7 +48,7 @@
     var orderEl = document.getElementById("r-order");
     if (id) orderEl.textContent = "Order " + id;
 
-    function euro(n) { return "€" + Number(n).toFixed(2); }
+    function euro(n) { return "$" + Number(n).toFixed(2); }
 
     function renderCard(o) {
       var rows = o.items.map(function (i) {

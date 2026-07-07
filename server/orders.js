@@ -171,7 +171,7 @@ async function createOrder({ pricing, customer, shipping, currency }) {
   const order = {
     id: genId(),
     status: STATUS.PENDING,
-    currency: currency || "EUR",
+    currency: currency || "USD",
     items: pricing.items,
     subtotal: pricing.subtotal,
     shipping: pricing.shipping,
