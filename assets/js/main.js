@@ -49,7 +49,8 @@
     "</div>" +
     '<div class="footer-word" aria-hidden="true">Nuvamin</div>' +
     '<p class="wrap footer-disclaimer">All Nuvamin products are supplied strictly for laboratory research use only. They are not for human or veterinary use, not dietary supplements, and not intended to diagnose, treat, cure, or prevent any disease or condition. By purchasing, you confirm you are a qualified researcher or institution and accept our terms of sale.</p>' +
-    '<div class="footer-base"><span>&copy; 2026 Nuvamin</span><span>Research use only &middot; Verified by independent laboratories</span><span>Privacy &middot; Terms</span></div>';
+    '<div class="footer-base"><span>&copy; 2026 Nuvamin</span><span>Research use only &middot; Verified by independent laboratories</span>' +
+    '<span><a href="privacy.html">Privacy</a> &middot; <a href="terms.html">Terms</a> &middot; <a href="shipping-returns.html">Shipping &amp; returns</a></span></div>';
 
   var headerEl = document.querySelector(".site-header");
   if (headerEl && !headerEl.innerHTML.trim()) headerEl.innerHTML = headerHTML;
@@ -293,6 +294,8 @@
 
   var toastEl = document.createElement("div");
   toastEl.className = "toast";
+  toastEl.setAttribute("role", "status");
+  toastEl.setAttribute("aria-live", "polite");
   document.body.appendChild(toastEl);
   var toastTimer = null;
   function toast(msg) {

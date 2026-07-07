@@ -652,6 +652,8 @@ body.hero-go .hero-baseline { animation: heroFadeUp 1.05s 1.4s var(--ease) forwa
   text-transform: uppercase;
   color: rgba(255, 255, 255, 0.4);
 }
+.footer-base a { color: rgba(255, 255, 255, 0.4); transition: color 0.3s; }
+.footer-base a:hover { color: #fff; }
 .footer-disclaimer {
   padding: 0 var(--gutter) 26px;
   font-size: 11px;
@@ -679,7 +681,7 @@ body.hero-go .hero-baseline { animation: heroFadeUp 1.05s 1.4s var(--ease) forwa
   padding: 14px 0;
   margin-bottom: clamp(32px, 4vw, 56px);
 }
-.filiter, .filters { display: flex; flex-wrap: wrap; gap: 8px; }
+.filters { display: flex; flex-wrap: wrap; gap: 8px; }
 .fbtn {
   font-family: var(--display);
   font-size: 10.5px;
@@ -793,6 +795,24 @@ body.hero-go .hero-baseline { animation: heroFadeUp 1.05s 1.4s var(--ease) forwa
 .co-label { display: block; margin-top: 22px; font-family: var(--display); font-size: 10.5px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-60); margin-bottom: 8px; }
 .co-email { width: 100%; border: 0; border-bottom: 1px solid var(--line); background: transparent; padding: 11px 2px; font: inherit; color: var(--ink); outline: none; border-radius: 0; transition: border-color 0.3s; }
 .co-email:focus { border-color: var(--ink); }
+.co-grid { display: grid; grid-template-columns: 1fr 1.4fr; gap: 0 16px; }
+
+/* ---------- legal / policy prose ---------- */
+
+.legal-prose { max-width: 760px; }
+.legal-prose h2 { font-family: var(--display); font-size: 15px; letter-spacing: 0.18em; text-transform: uppercase; margin: 48px 0 14px; }
+.legal-prose p, .legal-prose li { font-size: 15px; line-height: 1.85; color: var(--ink-60); margin-bottom: 14px; }
+.legal-prose ul { padding-left: 20px; margin-bottom: 14px; }
+.legal-prose .placeholder-note {
+  border: 1px solid var(--line); background: var(--cream); padding: 18px 22px;
+  font-size: 13px; line-height: 1.7; color: var(--slate); margin: 26px 0 8px;
+}
+.legal-updated { font-family: var(--display); font-size: 10.5px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-40); margin-top: 18px; }
+
+/* keyboard focus visibility on cart controls */
+.qty button:focus-visible,
+.cart-line .remove:focus-visible,
+.btn:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 
 /* checkout result pages (confirmation / failed) */
 .result { max-width: 640px; margin: 0 auto; text-align: center; }

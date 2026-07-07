@@ -5,6 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Cart — Nuvamin</title>
 <meta name="description" content="Your Nuvamin cart.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Nuvamin">
+<meta property="og:title" content="Cart — Nuvamin">
+<meta property="og:description" content="Your Nuvamin cart.">
+<meta property="og:image" content="https://nuvamin.vercel.app/assets/img/retatrutide.webp">
+<meta name="twitter:card" content="summary">
+<meta name="robots" content="noindex">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23000000'/%3E%3Ctext x='16' y='22' text-anchor='middle' font-family='Arial' font-size='17' fill='%23FFFFFF'%3EN%3C/text%3E%3C/svg%3E">
 <link rel="stylesheet" href="assets/css/style.css">
 </head>
@@ -20,7 +27,7 @@
 </section>
 
 <section class="section" style="padding-top:0">
-  <div class="wrap" id="cart-root"></div>
+  <div class="wrap" id="cart-root" aria-live="polite"></div>
 </section>
 
 <footer class="site-footer"></footer>
@@ -31,6 +38,24 @@
   (function () {
     var root = document.getElementById("cart-root");
     var FREE_SHIP = 60, SHIP = 6;
+    var CO_KEY = "nuvamin-checkout";
+
+    function eur(n) { return "&euro;" + Number(n).toFixed(2); }
+
+    function readSaved() {
+      try { return JSON.parse(sessionStorage.getItem(CO_KEY)) || {}; }
+      catch (e) { return {}; }
+    }
+
+    function field(id, label, autocomplete, opts) {
+      opts = opts || {};
+      return (
+        '<label class="co-label" for="' + id + '">' + label + (opts.optional ? ' <span style="text-transform:none;letter-spacing:0">(optional)</span>' : "") + "</label>" +
+        '<input class="co-email" id="' + id + '" type="' + (opts.type || "text") + '"' +
+        (autocomplete ? ' autocomplete="' + autocomplete + '"' : "") +
+        (opts.placeholder ? ' placeholder="' + opts.placeholder + '"' : "") + ">"
+      );
+    }
 
     function render() {
       var cart = nvCart.read();
@@ -54,33 +79,50 @@
           '<a class="cart-thumb" href="product.html?id=' + p.id + '">' + nvProductImg(p) + "</a>" +
           "<div><h3>" + p.name + '</h3><p class="sub">' + p.sub + " &middot; " + p.form + '</p>' +
           '<button class="remove" data-remove="' + p.id + '">Remove</button></div>' +
-          '<div class="qty"><button data-dec="' + p.id + '" aria-label="Decrease">&minus;</button><output>' + q + '</output><button data-inc="' + p.id + '" aria-label="Increase">+</button></div>' +
-          '<span class="cart-line-price">&euro;' + p.price * q + "</span>" +
+          '<div class="qty"><button data-dec="' + p.id + '" aria-label="Decrease quantity of ' + p.name + '">&minus;</button><output>' + q + '</output><button data-inc="' + p.id + '" aria-label="Increase quantity of ' + p.name + '">+</button></div>' +
+          '<span class="cart-line-price">' + eur(p.price * q) + "</span>" +
           "</div>"
         );
       }).join("");
 
       var shipping = subtotal >= FREE_SHIP ? 0 : SHIP;
-      var shipLabel = shipping === 0 ? "Free" : "&euro;" + shipping;
+      var shipLabel = shipping === 0 ? "Free" : eur(shipping);
       var toFree = subtotal >= FREE_SHIP
         ? "You have free shipping."
-        : "&euro;" + (FREE_SHIP - subtotal) + " away from free shipping.";
+        : eur(FREE_SHIP - subtotal) + " away from free shipping.";
 
       root.innerHTML =
         '<div class="cart-layout">' +
         '<div class="cart-lines">' + lines + "</div>" +
         '<aside class="cart-summary"><h2>Summary</h2>' +
-        '<div class="sum-row"><span>Subtotal</span><span>&euro;' + subtotal + "</span></div>" +
+        '<div class="sum-row"><span>Subtotal</span><span>' + eur(subtotal) + "</span></div>" +
         '<div class="sum-row"><span>Shipping</span><span>' + shipLabel + "</span></div>" +
         '<div class="sum-row"><span style="font-family:var(--serif);font-style:italic">' + toFree + "</span></div>" +
-        '<div class="sum-row total"><span>Total</span><span>&euro;' + (subtotal + shipping) + "</span></div>" +
-        '<label class="co-label" for="co-email">Email for receipt</label>' +
-        '<input class="co-email" id="co-email" type="email" placeholder="you@lab.org" autocomplete="email">' +
+        '<div class="sum-row total"><span>Total</span><span>' + eur(subtotal + shipping) + "</span></div>" +
+        '<h2 style="margin-top:34px">Delivery</h2>' +
+        field("co-email", "Email for receipt", "email", { type: "email", placeholder: "you@lab.org" }) +
+        field("co-name", "Full name", "name") +
+        field("co-line1", "Address", "address-line1") +
+        field("co-line2", "Address line 2", "address-line2", { optional: true }) +
+        '<div class="co-grid">' +
+        "<div>" + field("co-postal", "Postal code", "postal-code") + "</div>" +
+        "<div>" + field("co-city", "City", "address-level2") + "</div>" +
+        "</div>" +
+        field("co-country", "Country", "country-name") +
         '<button class="btn" id="checkout">Checkout <span class="arr">&rarr;</span></button>' +
         '<p style="margin-top:16px;font-size:11.5px;color:var(--ink-40)">Secure hosted payment. Card details are entered on the gateway&rsquo;s PCI-compliant page &mdash; Nuvamin never sees or stores them. Certificate of analysis included.</p>' +
         "</aside></div>";
-      var saved = sessionStorage.getItem("nuvamin-email");
-      if (saved) { var f = document.getElementById("co-email"); if (f) f.value = saved; }
+
+      var saved = readSaved();
+      ["email", "name", "line1", "line2", "postal", "city", "country"].forEach(function (k) {
+        var el = document.getElementById("co-" + k);
+        if (el && saved[k]) el.value = saved[k];
+      });
+    }
+
+    function fieldVal(k) {
+      var el = document.getElementById("co-" + k);
+      return el ? el.value.trim() : "";
     }
 
     var busy = false;
@@ -88,14 +130,27 @@
       if (busy) return;
       var cart = nvCart.read();
       if (!Object.keys(cart).length) { nvToast("Your cart is empty"); return; }
-      var emailEl = document.getElementById("co-email");
-      var emailv = emailEl ? emailEl.value.trim() : "";
-      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(emailv)) {
+
+      var vals = {
+        email: fieldVal("email"), name: fieldVal("name"),
+        line1: fieldVal("line1"), line2: fieldVal("line2"),
+        postal: fieldVal("postal"), city: fieldVal("city"), country: fieldVal("country")
+      };
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(vals.email)) {
         nvToast("Enter a valid email for your receipt");
-        if (emailEl) emailEl.focus();
+        var f = document.getElementById("co-email"); if (f) f.focus();
         return;
       }
-      sessionStorage.setItem("nuvamin-email", emailv);
+      var required = { name: "full name", line1: "address", postal: "postal code", city: "city", country: "country" };
+      for (var k in required) {
+        if (!vals[k]) {
+          nvToast("Enter your " + required[k] + " for delivery");
+          var el = document.getElementById("co-" + k); if (el) el.focus();
+          return;
+        }
+      }
+      try { sessionStorage.setItem(CO_KEY, JSON.stringify(vals)); } catch (e) {}
+
       busy = true;
       var btn = document.getElementById("checkout");
       if (btn) { btn.textContent = "Redirecting…"; btn.disabled = true; }
@@ -104,7 +159,14 @@
         var res = await fetch(apiBase + "/api/checkout", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ cart: cart, customer: { email: emailv } })
+          body: JSON.stringify({
+            cart: cart,
+            customer: { email: vals.email, name: vals.name },
+            shipping: {
+              name: vals.name, line1: vals.line1, line2: vals.line2,
+              city: vals.city, postalCode: vals.postal, country: vals.country
+            }
+          })
         });
         var data = await res.json().catch(function () { return {}; });
         if (res.ok && data.redirectUrl) {

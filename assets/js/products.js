@@ -113,16 +113,12 @@ const NV_PRODUCTS = [
 
 /* ---------- product imagery ---------- */
 
-function nvProductImg(p, extraClass) {
+function nvProductImg(p) {
   return (
-    '<img class="pvial ' + (extraClass || "") + '" src="assets/img/' + p.id + '.webp" ' +
+    '<img class="pvial" src="assets/img/' + p.id + '.webp" ' +
     'alt="' + p.name + " " + p.mg + ' research vial" decoding="async">'
   );
 }
-
-/* back-compat aliases */
-function nvVialSVG(p) { return nvProductImg(p); }
-function nvBottleSVG(p) { return nvProductImg(p); }
 
 function nvProductCard(p, i) {
   return (
@@ -133,7 +129,7 @@ function nvProductCard(p, i) {
     '</a>' +
     '<div class="pcard-meta">' +
     '<div class="pcard-row"><h3 class="pcard-name"><a href="product.html?id=' + p.id + '">' + p.name + '</a></h3>' +
-    '<span class="pcard-price">&euro;' + p.price + '</span></div>' +
+    '<span class="pcard-price">&euro;' + p.price.toFixed(2) + '</span></div>' +
     '<p class="pcard-sub">' + p.sub + '</p>' +
     '<button class="btn btn-line pcard-add" data-add="' + p.id + '">Add to cart</button>' +
     '</div>' +

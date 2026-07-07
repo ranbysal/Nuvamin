@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+Disallow: /cart.html
+Disallow: /confirmation.html
+Disallow: /failed.html
+Disallow: /admin/
+Disallow: /api/
+Disallow: /checkout/
+Disallow: /mock-hosted
+
+Sitemap: https://nuvamin.vercel.app/sitemap.xml
