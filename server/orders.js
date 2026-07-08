@@ -174,6 +174,8 @@ async function createOrder({ pricing, customer, shipping, currency }) {
     currency: currency || "USD",
     items: pricing.items,
     subtotal: pricing.subtotal,
+    discount: pricing.discount || 0,
+    discountCode: pricing.discountCode || "",
     shipping: pricing.shipping,
     total: pricing.total,
     customer: {

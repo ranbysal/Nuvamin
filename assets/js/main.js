@@ -373,7 +373,33 @@
     var form = e.target;
     if (form.matches("[data-newsletter]")) {
       e.preventDefault();
-      form.innerHTML = '<p class="news-ok" role="status">Confirmed. The next lot report lands in your inbox.</p>';
+      var nbtn = form.querySelector('button[type="submit"], button');
+      var input = form.querySelector('input[type="email"]');
+      var addr = input ? input.value.trim() : "";
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(addr)) {
+        toast("Enter a valid email address");
+        if (input) input.focus();
+        return;
+      }
+      if (nbtn) nbtn.disabled = true;
+      var apiBase2 = window.NUVAMIN_API_BASE || "";
+      fetch(apiBase2 + "/api/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: addr, source: (document.body.getAttribute("data-page") || "site") + "-newsletter" })
+      }).then(function (res) {
+        return res.json().catch(function () { return {}; }).then(function (body) {
+          if (res.ok) {
+            form.innerHTML = '<p class="news-ok" role="status">Confirmed &mdash; check your inbox for your welcome offer.</p>';
+          } else {
+            toast(body.error || "We couldn't sign you up right now. Please try again.");
+            if (nbtn) nbtn.disabled = false;
+          }
+        });
+      }).catch(function () {
+        toast("We couldn't sign you up right now. Please try again.");
+        if (nbtn) nbtn.disabled = false;
+      });
     }
     if (form.matches("[data-contact]")) {
       e.preventDefault();

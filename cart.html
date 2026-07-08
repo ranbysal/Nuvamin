@@ -110,12 +110,13 @@
         "<div>" + field("co-city", "City", "address-level2") + "</div>" +
         "</div>" +
         field("co-country", "Country", "country-name") +
+        field("co-code", "Discount code", null, { optional: true, placeholder: "e.g. LOT10" }) +
         '<button class="btn" id="checkout">Checkout <span class="arr">&rarr;</span></button>' +
         '<p style="margin-top:16px;font-size:11.5px;color:var(--ink-40)">Secure hosted payment. Card details are entered on the gateway&rsquo;s PCI-compliant page &mdash; Nuvamin never sees or stores them. Certificate of analysis included.</p>' +
         "</aside></div>";
 
       var saved = readSaved();
-      ["email", "name", "line1", "line2", "postal", "city", "country"].forEach(function (k) {
+      ["email", "name", "line1", "line2", "postal", "city", "country", "code"].forEach(function (k) {
         var el = document.getElementById("co-" + k);
         if (el && saved[k]) el.value = saved[k];
       });
@@ -137,7 +138,8 @@
       var vals = {
         email: fieldVal("email"), name: fieldVal("name"),
         line1: fieldVal("line1"), line2: fieldVal("line2"),
-        postal: fieldVal("postal"), city: fieldVal("city"), country: fieldVal("country")
+        postal: fieldVal("postal"), city: fieldVal("city"), country: fieldVal("country"),
+        code: fieldVal("code")
       };
       if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(vals.email)) {
         nvToast("Enter a valid email for your receipt");
@@ -168,7 +170,8 @@
             shipping: {
               name: vals.name, line1: vals.line1, line2: vals.line2,
               city: vals.city, postalCode: vals.postal, country: vals.country
-            }
+            },
+            discountCode: vals.code
           })
         });
         var data = await res.json().catch(function () { return {}; });

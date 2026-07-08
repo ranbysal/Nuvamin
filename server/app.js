@@ -129,6 +129,24 @@ app.post("/api/checkout", rateLimitCheckout, async (req, res) => {
       return res.status(400).json({ error: checked.error });
     }
 
+    // Optional first-order discount code (the Lot Report welcome offer).
+    const codeInput = cleanStr(req.body && req.body.discountCode, 40).toUpperCase();
+    if (codeInput) {
+      if (codeInput !== config.discount.code || config.discount.percent <= 0) {
+        return res.status(400).json({ error: "That discount code isn't valid." });
+      }
+      const all = await orders.listOrders({ status: orders.STATUS.PAID });
+      const hasOrdered = all.some(
+        (o) => (o.customer.email || "").toLowerCase() === checked.customer.email.toLowerCase()
+      );
+      if (hasOrdered) {
+        return res.status(400).json({ error: "That code is only valid on your first order." });
+      }
+      pricing.discountCode = codeInput;
+      pricing.discount = Number(((pricing.subtotal * config.discount.percent) / 100).toFixed(2));
+      pricing.total = Number((pricing.subtotal - pricing.discount + pricing.shipping).toFixed(2));
+    }
+
     const order = await orders.createOrder({
       pricing,
       customer: checked.customer,
@@ -177,6 +195,72 @@ app.post("/api/contact", rateLimitContact, async (req, res) => {
     console.error("[contact] send failed:", e && (e.response || e.code || e.message), e && e.responseCode || "");
     return res.status(502).json({ error: "We couldn't send your message right now. Please email us directly." });
   }
+});
+
+/* ---------------------------------------------------- the Lot Report list */
+
+const rateLimitSubscribe = makeRateLimit(5, 60_000, "Too many attempts. Please wait a minute.");
+
+function unsubscribeToken(emailAddr) {
+  return crypto
+    .createHmac("sha256", config.subscribers.secret || "dev")
+    .update(String(emailAddr).toLowerCase())
+    .digest("hex");
+}
+
+async function postToSubscribersSheet(payload) {
+  const resp = await fetch(config.subscribers.webhookUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(Object.assign({ secret: config.subscribers.secret }, payload)),
+    redirect: "follow",
+  });
+  if (!resp.ok) throw new Error("subscribers webhook responded " + resp.status);
+  return resp.json().catch(() => ({}));
+}
+
+// Newsletter signup → subscribers sheet, which sends the welcome email with
+// the first-order discount code from the client's own Gmail.
+app.post("/api/subscribe", rateLimitSubscribe, async (req, res) => {
+  const emailAddr = cleanStr(req.body && req.body.email, 200);
+  if (!EMAIL_RE.test(emailAddr)) {
+    return res.status(400).json({ error: "Please enter a valid email address." });
+  }
+  const source = cleanStr(req.body && req.body.source, 60) || "site";
+  if (!config.subscribers.webhookUrl) {
+    console.log(`[subscribe:DEV] ${emailAddr} (${source}) — SUBSCRIBERS_WEBHOOK_URL not set`);
+    return res.json({ ok: true });
+  }
+  try {
+    await postToSubscribersSheet({ action: "subscribe", email: emailAddr, source });
+    return res.json({ ok: true });
+  } catch (e) {
+    console.error("[subscribe] failed:", e.message);
+    return res.status(502).json({ error: "We couldn't sign you up right now. Please try again." });
+  }
+});
+
+// One-click unsubscribe from email links: HMAC-signed so only recipients of
+// our own emails can hit it, then forwarded to the subscribers sheet.
+app.get("/api/unsubscribe", async (req, res) => {
+  const emailAddr = cleanStr(req.query.email, 200);
+  const token = cleanStr(req.query.token, 128);
+  const expected = unsubscribeToken(emailAddr);
+  const a = Buffer.from(token);
+  const b = Buffer.from(expected);
+  if (!emailAddr || a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
+    return res.redirect("/404.html");
+  }
+  try {
+    if (config.subscribers.webhookUrl) {
+      await postToSubscribersSheet({ action: "unsubscribe", email: emailAddr });
+    } else {
+      console.log(`[subscribe:DEV] unsubscribe ${emailAddr}`);
+    }
+  } catch (e) {
+    console.error("[unsubscribe] failed:", e.message);
+  }
+  return res.redirect("/unsubscribed.html");
 });
 
 /* ------------------------------------------------------- gateway returns */
@@ -264,6 +348,8 @@ app.get("/api/orders/:id", async (req, res) => {
     currency: order.currency,
     items: order.items,
     subtotal: order.subtotal,
+    discount: order.discount || 0,
+    discountCode: order.discountCode || "",
     shipping: order.shipping,
     total: order.total,
     createdAt: order.createdAt,

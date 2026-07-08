@@ -14,6 +14,9 @@ What gets wired up:
 | "New paid order" notification | Company inbox (`ORDER_NOTIFY_EMAIL`) with items, totals, shipping address |
 | Orders & fulfilment board | A Google Sheet the client owns — one row per paid order, with a Fulfilled checkbox |
 | "It's on the way" email | Sent from the client's Gmail automatically when Fulfilled is ticked |
+| The Lot Report list | A second Google Sheet — newsletter signups land here automatically |
+| Welcome email + first-order code | Sent from the client's Gmail the moment someone subscribes |
+| Lot-drop announcements | One menu click in the sheet emails every active subscriber |
 
 ---
 
@@ -109,6 +112,54 @@ installs the fulfilment trigger. Safe to re-run any time.
 > To change the script later: edit it, then **Deploy → Manage deployments →
 > pencil → Version: New version → Deploy** — the URL stays the same.
 
+---
+
+## Part 2b — The Lot Report (subscribers list + welcome offer)
+
+The newsletter form on the site posts each signup to a **second** sheet. The
+sheet's script instantly emails the new subscriber a designed welcome email
+containing the first-order discount code (**LOT10 — 10% off**, enforced by
+the checkout: valid once, first order per email address only). When the team
+wants to announce a new lot, one menu click emails every active subscriber.
+
+The script lives at **`google/nuvamin-subscribers.gs`**.
+
+**1. Create a second sheet** — [sheets.new](https://sheets.new), name it
+*Nuvamin — Lot Report subscribers*.
+
+**2. Attach the script** — **Extensions → Apps Script**, paste the entire
+contents of `google/nuvamin-subscribers.gs`, change `SECRET` to a long random
+string (use a **different** one than the orders sheet). Save, then run
+**`setup()`** once and authorize (Sheets + Gmail).
+
+**3. Deploy** — **Deploy → New deployment → Web app** (*execute as Me*,
+*access: Anyone*) → copy the URL.
+
+**4. In Vercel**, add and redeploy:
+
+| Key | Value |
+| --- | --- |
+| `SUBSCRIBERS_WEBHOOK_URL` | the web-app URL from step 3 |
+| `SUBSCRIBERS_WEBHOOK_SECRET` | the same string as the script's `SECRET` |
+| `FIRST_ORDER_DISCOUNT_CODE` | `LOT10` (or change it — also change it in the script) |
+| `FIRST_ORDER_DISCOUNT_PERCENT` | `10` (ditto) |
+
+### How the list works day-to-day
+
+- **Signups are automatic** — every newsletter submit adds a green ACTIVE
+  row and the welcome email (with the code) sends immediately. Duplicates
+  are ignored; unsubscribed addresses re-activate if they sign up again.
+- **Announce a drop**: open the sheet → **Nuvamin menu → Send lot-drop
+  email…** → type the compound (e.g. `Retatrutide 30MG`), the product link,
+  and an optional note. Every ACTIVE subscriber gets the designed
+  announcement. (Gmail quota: ~1,500 recipients/day on Workspace.)
+- **Unsubscribes are one click** — every email footer has a signed
+  unsubscribe link; the row turns red UNSUBSCRIBED automatically and that
+  address is skipped on future sends.
+- **The code really works**: `LOT10` gives 10% off in the checkout, is
+  rejected on anything but the customer's first order, and shows as a
+  discount line in the receipt, the confirmation page, and the orders board.
+
 ## Part 3 — Test it (5 minutes)
 
 1. On the live site: **Contact page** → send a test message → it should arrive
@@ -121,7 +172,11 @@ installs the fulfilment trigger. Safe to re-run any time.
    - a new amber **NEW — TO FULFIL** row appears on the orders board;
    - tick **Fulfilled ✓** on that row: it turns green and the shipped email
      (with tracking, if entered) arrives at the customer address.
-3. If any email doesn't arrive: check Vercel → the deployment → **Functions
+3. Newsletter: submit the form on the homepage with a test address — a green
+   row appears on the subscribers sheet and the welcome email (code LOT10)
+   arrives. Use the code on a first test order and confirm the discount line;
+   click Unsubscribe in the email footer and confirm the row turns red.
+4. If any email doesn't arrive: check Vercel → the deployment → **Functions
    logs** — SMTP and sheet errors are logged there with the reason.
 
 ## Troubleshooting

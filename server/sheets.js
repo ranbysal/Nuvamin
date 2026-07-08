@@ -29,7 +29,9 @@ function rowFor(order) {
     customerName: order.customer.name || "",
     customerEmail: order.customer.email || "",
     // Multiline for the sheet cell; itemsDetailed for the shipped email.
-    items: order.items.map((i) => `${i.quantity} × ${i.name} ${i.mg}`).join("\n"),
+    items:
+      order.items.map((i) => `${i.quantity} × ${i.name} ${i.mg}`).join("\n") +
+      (order.discount ? `\nCode ${order.discountCode || ""}: −$${Number(order.discount).toFixed(2)}` : ""),
     itemsDetailed: order.items.map((i) => ({
       id: i.id,
       name: i.name,

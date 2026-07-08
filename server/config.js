@@ -104,6 +104,20 @@ const config = {
     secret: env.SHEETS_WEBHOOK_SECRET || "",
   },
 
+  // The Lot Report mailing list — second Apps Script web app (subscribers
+  // sheet). The same secret signs unsubscribe tokens in outgoing email.
+  subscribers: {
+    webhookUrl: env.SUBSCRIBERS_WEBHOOK_URL || "",
+    secret: env.SUBSCRIBERS_WEBHOOK_SECRET || "",
+  },
+
+  // First-order discount promised to new Lot Report subscribers. The welcome
+  // email (sent by the subscribers Apps Script) must advertise the same code.
+  discount: {
+    code: (env.FIRST_ORDER_DISCOUNT_CODE || "LOT10").toUpperCase(),
+    percent: Math.min(90, Math.max(0, parseInt(env.FIRST_ORDER_DISCOUNT_PERCENT || "10", 10) || 0)),
+  },
+
   adminToken: env.ADMIN_TOKEN || "",
 };
 

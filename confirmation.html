@@ -56,6 +56,7 @@
                '</span><span>' + euro(i.lineTotal) + "</span></div>";
       }).join("");
       card.innerHTML = rows +
+        (o.discount ? '<div class="rc-row"><span>Discount' + (o.discountCode ? " (" + o.discountCode + ")" : "") + '</span><span>&minus;' + euro(o.discount) + "</span></div>" : "") +
         '<div class="rc-row"><span>Shipping</span><span>' + (o.shipping === 0 ? "Free" : euro(o.shipping)) + "</span></div>" +
         '<div class="rc-row rc-total"><span>Total paid</span><span>' + euro(o.total) + "</span></div>";
       card.hidden = false;

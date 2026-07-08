@@ -62,6 +62,7 @@ function MOCK_PAGE(order, session) {
     <div class="badge">Order ${esc(order.id)}</div>
     <div class="sim">Simulated gateway (development). No real card is processed and nothing is stored.</div>
     <table>${rows}
+      ${order.discount ? `<tr><td>Discount${order.discountCode ? ` (${esc(order.discountCode)})` : ""}</td><td class="r">&minus;${money(order.discount, order.currency)}</td></tr>` : ""}
       <tr><td>Shipping</td><td class="r">${order.shipping === 0 ? "Free" : money(order.shipping, order.currency)}</td></tr>
       <tr class="tot"><td>Total</td><td class="r">${money(order.total, order.currency)}</td></tr>
     </table>

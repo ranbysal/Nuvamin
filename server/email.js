@@ -161,9 +161,13 @@ function totalsBlock(order) {
           <span style="font-family:${SANS};font-size:${strong ? "16px" : "12px"};color:${strong ? INK : SLATE};font-weight:${strong ? "700" : "400"};">${value}</span>
         </td>
       </tr>`;
+  const discountRow = order.discount
+    ? row(`Discount${order.discountCode ? ` (${escHtml(order.discountCode)})` : ""}`, "&minus;" + money(order.discount, order.currency))
+    : "";
   return `
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
         ${row("Subtotal", money(order.subtotal, order.currency))}
+        ${discountRow}
         ${row("Shipping", order.shipping === 0 ? "Free" : money(order.shipping, order.currency))}
         <tr><td colspan="2" style="padding-top:14px;border-bottom:2px solid ${INK};"></td></tr>
         ${row("Total paid", money(order.total, order.currency), true)}
@@ -207,6 +211,7 @@ function renderReceipt(order) {
     `Status: PAID\n\n` +
     order.items.map((i) => `  ${i.quantity} x ${i.name} ${i.mg}  —  ${money(i.lineTotal, order.currency)}`).join("\n") +
     `\n\nSubtotal: ${money(order.subtotal, order.currency)}\n` +
+    (order.discount ? `Discount${order.discountCode ? ` (${order.discountCode})` : ""}: -${money(order.discount, order.currency)}\n` : "") +
     `Shipping: ${order.shipping === 0 ? "Free" : money(order.shipping, order.currency)}\n` +
     `Total:    ${money(order.total, order.currency)}\n\n` +
     (addr.length ? `Ships to:\n  ${addr.join("\n  ")}\n\n` : "") +
@@ -292,6 +297,7 @@ async function sendOrderNotification(order) {
     (order.payment && order.payment.transactionId ? `Txn:      ${order.payment.transactionId}\n` : "") +
     `\n${lines}\n\n` +
     `Subtotal: ${money(order.subtotal, order.currency)}\n` +
+    (order.discount ? `Discount${order.discountCode ? ` (${order.discountCode})` : ""}: -${money(order.discount, order.currency)}\n` : "") +
     `Shipping: ${order.shipping === 0 ? "Free" : money(order.shipping, order.currency)}\n` +
     `Total:    ${money(order.total, order.currency)}\n\n` +
     (addr.length ? `Ship to:\n  ${addr.join("\n  ")}\n` : "Ship to: (no address on file)\n") +
@@ -309,6 +315,7 @@ async function sendOrderNotification(order) {
           `<td align="right" style="padding:6px 0;border-top:1px solid #eee">${money(i.lineTotal, order.currency)}</td></tr>`
       )
       .join("") +
+    (order.discount ? `<tr><td style="padding:6px 0">Discount${order.discountCode ? ` (${escHtml(order.discountCode)})` : ""}</td><td align="right">&minus;${money(order.discount, order.currency)}</td></tr>` : "") +
     `<tr><td style="padding:6px 0">Shipping</td><td align="right">${order.shipping === 0 ? "Free" : money(order.shipping, order.currency)}</td></tr>` +
     `<tr><td style="padding:8px 0;border-top:2px solid #111"><strong>Total</strong></td>` +
     `<td align="right" style="padding:8px 0;border-top:2px solid #111"><strong>${money(order.total, order.currency)}</strong></td></tr>` +
