@@ -43,7 +43,7 @@
     "</ul></div>" +
     '<div><h4 class="footer-h">Support</h4><ul>' +
     '<li><a href="contact.html#faq">Certificates of analysis</a></li>' +
-    '<li><a href="shipping-returns.html">Shipping &amp; cold chain</a></li>' +
+    '<li><a href="shipping-returns.html">Shipping &amp; handling</a></li>' +
     '<li><a href="mailto:labs@nuvamin.bio">labs@nuvamin.bio</a></li>' +
     "</ul></div>" +
     "</div>" +
