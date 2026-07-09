@@ -4,6 +4,7 @@
  * Nuvamin — storefront static host + hosted-gateway checkout API.
  *
  * Route map:
+ *   GET  /api/health              boot + configuration diagnostics (no secrets)
  *   POST /api/checkout            create pending order + hosted session -> {redirectUrl}
  *   GET  /checkout/success        gateway return (success) -> confirmation page
  *   GET  /checkout/cancel         gateway return (cancel)  -> failed page
@@ -46,8 +47,19 @@ app.use(
 );
 app.use(express.urlencoded({ extended: true, limit: "32kb" }));
 
-const gateway = getGateway();
-console.log(`[nuvamin] payment provider: ${gateway.name}`);
+// The payment gateway is resolved LAZILY, on first use by a payment route.
+// Resolving it here at import time crashed the entire serverless function
+// whenever payment config was missing (e.g. PAYMENT_PROVIDER unset in
+// production) — which took the contact form and the mailing list down with
+// it. A payment misconfiguration must only ever degrade the payment routes.
+let _gateway = null;
+function gateway() {
+  if (!_gateway) {
+    _gateway = getGateway();
+    console.log(`[nuvamin] payment provider: ${_gateway.name}`);
+  }
+  return _gateway;
+}
 
 /* ------------------------------------------------------------ rate limit */
 
@@ -117,6 +129,7 @@ function validateCustomer(body) {
 // Create the order (pending) BEFORE payment, then open a hosted session.
 app.post("/api/checkout", rateLimitCheckout, async (req, res) => {
   try {
+    const gw = gateway(); // resolve first — a config error must not create an orphan order
     const rawCart = (req.body && req.body.cart) || {};
     const pricing = catalog.priceOrder(rawCart);
 
@@ -154,12 +167,12 @@ app.post("/api/checkout", rateLimitCheckout, async (req, res) => {
       currency: config.currency,
     });
 
-    const session = await gateway.createCheckoutSession(order, config.urls);
+    const session = await gw.createCheckoutSession(order, config.urls);
 
     await orders.updateOrder(
       order.id,
       (o) => {
-        o.payment.provider = gateway.name;
+        o.payment.provider = gw.name;
         o.payment.sessionId = session.sessionId;
       },
       "checkout:session-created"
@@ -167,9 +180,40 @@ app.post("/api/checkout", rateLimitCheckout, async (req, res) => {
 
     return res.json({ orderId: order.id, redirectUrl: session.redirectUrl });
   } catch (err) {
+    if (err.code === "GATEWAY_CONFIG" || err.code === "ORDER_STORE_CONFIG") {
+      console.error("[checkout] unavailable — configuration:", err.message);
+      return res.status(503).json({ error: "Checkout isn't available right now. Please try again later." });
+    }
     console.error("[checkout] error:", err.message);
     return res.status(502).json({ error: "Unable to start checkout. Please try again." });
   }
+});
+
+/* ------------------------------------------------------------------ health */
+
+// Boot + configuration diagnostics. Never throws and never touches secrets:
+// each subsystem reports its own state, so a production misconfiguration is
+// visible in one request instead of presenting as a crashed function.
+app.get("/api/health", (req, res) => {
+  let gatewayCheck;
+  try {
+    gatewayCheck = { ok: true, provider: gateway().name };
+  } catch (e) {
+    gatewayCheck = { ok: false, error: e.message };
+  }
+  res.json({
+    ok: true,
+    service: "nuvamin-api",
+    time: new Date().toISOString(),
+    env: { vercel: config.onVercel, production: config.isProduction },
+    checks: {
+      orderStore: orders.storeStatus(),
+      gateway: gatewayCheck,
+      email: { configured: Boolean(config.email.host && config.email.user) },
+      ordersSheet: { configured: Boolean(config.sheets.webhookUrl) },
+      subscribersSheet: { configured: Boolean(config.subscribers.webhookUrl) },
+    },
+  });
 });
 
 /* ----------------------------------------------------------------- contact */
@@ -228,6 +272,11 @@ app.post("/api/subscribe", rateLimitSubscribe, async (req, res) => {
   }
   const source = cleanStr(req.body && req.body.source, 60) || "site";
   if (!config.subscribers.webhookUrl) {
+    if (config.isProduction) {
+      // Never claim success in production while dropping the signup.
+      console.error("[subscribe] SUBSCRIBERS_WEBHOOK_URL is not configured — signup rejected");
+      return res.status(503).json({ error: "Signups are temporarily unavailable. Please try again soon." });
+    }
     console.log(`[subscribe:DEV] ${emailAddr} (${source}) — SUBSCRIBERS_WEBHOOK_URL not set`);
     return res.json({ ok: true });
   }
@@ -269,20 +318,30 @@ app.get("/api/unsubscribe", async (req, res) => {
 // webhook is the source of truth. Hand off to the styled confirmation page,
 // which polls order status until the webhook confirms payment.
 app.get(config.paths.success, async (req, res) => {
-  const order = await orders.getOrder(String(req.query.order || ""));
-  if (!order) return res.redirect("/cart.html");
-  res.redirect("/confirmation.html?order=" + encodeURIComponent(order.id));
+  try {
+    const order = await orders.getOrder(String(req.query.order || ""));
+    if (!order) return res.redirect("/cart.html");
+    res.redirect("/confirmation.html?order=" + encodeURIComponent(order.id));
+  } catch (err) {
+    console.error("[checkout:return] success handler failed:", err.message);
+    res.redirect("/cart.html");
+  }
 });
 
 // Cancel/abandon return: mark cancelled (unless already resolved) and show the
 // failed page with a retry action.
 app.get(config.paths.cancel, async (req, res) => {
-  const order = await orders.getOrder(String(req.query.order || ""));
-  if (order && order.status === orders.STATUS.PENDING) {
-    await orders.setStatus(order.id, orders.STATUS.CANCELLED, null, "return:cancel");
+  try {
+    const order = await orders.getOrder(String(req.query.order || ""));
+    if (order && order.status === orders.STATUS.PENDING) {
+      await orders.setStatus(order.id, orders.STATUS.CANCELLED, null, "return:cancel");
+    }
+    const q = order ? "?order=" + encodeURIComponent(order.id) : "";
+    res.redirect("/failed.html" + q);
+  } catch (err) {
+    console.error("[checkout:return] cancel handler failed:", err.message);
+    res.redirect("/cart.html");
   }
-  const q = order ? "?order=" + encodeURIComponent(order.id) : "";
-  res.redirect("/failed.html" + q);
 });
 
 /* ------------------------------------------------------------- webhook */
@@ -290,8 +349,8 @@ app.get(config.paths.cancel, async (req, res) => {
 // Signed webhook — the authoritative status update. Idempotent: setStatus
 // rejects illegal/replayed transitions (paid can never be downgraded), and
 // the receipt only sends on the transition that actually applied.
-app.post(config.paths.webhook, async (req, res) => {
-  const { valid, event } = gateway.verifyWebhook(req);
+async function handlePaymentWebhook(req, res) {
+  const { valid, event } = gateway().verifyWebhook(req);
   if (!valid) {
     console.warn("[webhook] rejected: invalid signature");
     return res.status(401).json({ error: "invalid signature" });
@@ -333,12 +392,32 @@ app.post(config.paths.webhook, async (req, res) => {
   }
 
   return res.json({ ok: true });
+}
+
+app.post(config.paths.webhook, async (req, res) => {
+  try {
+    await handlePaymentWebhook(req, res);
+  } catch (err) {
+    // 5xx (not 2xx) so a real gateway re-delivers the event later instead of
+    // treating it as consumed while our store/provider config is broken.
+    const cfg = err.code === "GATEWAY_CONFIG" || err.code === "ORDER_STORE_CONFIG";
+    console.error(`[webhook] ${cfg ? "unavailable — configuration" : "processing failed"}:`, err.message);
+    if (!res.headersSent) {
+      res.status(cfg ? 503 : 500).json({ error: cfg ? "not configured" : "webhook processing failed" });
+    }
+  }
 });
 
 /* ------------------------------------------------- public order status */
 
 app.get("/api/orders/:id", async (req, res) => {
-  const order = await orders.getOrder(req.params.id);
+  let order;
+  try {
+    order = await orders.getOrder(req.params.id);
+  } catch (err) {
+    console.error("[orders] lookup failed:", err.message);
+    return res.status(503).json({ error: "Order lookup is temporarily unavailable." });
+  }
   if (!order) return res.status(404).json({ error: "not found" });
   // Return a safe projection (no address, no event log, no secrets) — the
   // order id travels in URLs, so this endpoint must never expose PII.
@@ -370,54 +449,74 @@ function requireAdmin(req, res, next) {
 }
 
 app.get("/admin/orders", requireAdmin, async (req, res) => {
-  res.json(await orders.listOrders({ status: req.query.status }));
+  try {
+    res.json(await orders.listOrders({ status: req.query.status }));
+  } catch (err) {
+    // Admin-facing and token-gated: return the real reason to speed up fixes.
+    console.error("[admin] order list failed:", err.message);
+    res.status(503).json({ error: err.message });
+  }
 });
 
 /* ---------------------------------------------- built-in mock hosted page */
 // Mounted ONLY when the mock provider is active — with a real gateway these
 // endpoints do not exist, so order status can never be forged through them.
+// Decided from config (not the gateway instance) so mounting never needs to
+// construct a gateway at import time.
 
-if (gateway.name === "mock") {
+const mockRoutesActive = config.provider === "mock" && (!config.isProduction || config.allowMockInProduction);
+
+if (mockRoutesActive) {
   app.get("/mock-hosted", async (req, res) => {
-    const order = await orders.getOrder(String(req.query.order || ""));
-    if (!order) return res.redirect("/cart.html");
-    res.type("html").send(MOCK_PAGE(order, String(req.query.session || "")));
+    try {
+      const order = await orders.getOrder(String(req.query.order || ""));
+      if (!order) return res.redirect("/cart.html");
+      res.type("html").send(MOCK_PAGE(order, String(req.query.session || "")));
+    } catch (err) {
+      console.error("[mock] hosted page failed:", err.message);
+      res.redirect("/cart.html");
+    }
   });
 
   // The mock page posts here; we emit a signed webhook to our own endpoint,
   // exactly as a real gateway would, then bounce the browser to the return URL.
   app.post("/mock-hosted/complete", async (req, res) => {
-    const orderId = String(req.body.order || "");
-    const outcome = String(req.body.outcome || "paid"); // paid | failed | cancel
-    const order = await orders.getOrder(orderId);
-    if (!order) return res.redirect("/cart.html");
-
-    if (outcome === "cancel") {
-      return res.redirect(config.paths.cancel + "?order=" + encodeURIComponent(orderId));
-    }
-
-    const payload = {
-      type: outcome === "failed" ? "failed" : "paid",
-      order_id: orderId,
-      session_id: order.payment.sessionId,
-      transaction_id: "mocktxn_" + Date.now(),
-      last4: "4242",
-    };
-    const rawBody = JSON.stringify(payload);
-    const signature = MockGateway.sign(rawBody);
-
     try {
-      await fetch(config.urls.webhook, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Webhook-Signature": "sha256=" + signature },
-        body: rawBody,
-      });
-    } catch (e) {
-      console.error("[mock] webhook dispatch failed:", e.message);
-    }
+      const orderId = String(req.body.order || "");
+      const outcome = String(req.body.outcome || "paid"); // paid | failed | cancel
+      const order = await orders.getOrder(orderId);
+      if (!order) return res.redirect("/cart.html");
 
-    const dest = outcome === "failed" ? config.paths.cancel : config.paths.success;
-    res.redirect(dest + "?order=" + encodeURIComponent(orderId));
+      if (outcome === "cancel") {
+        return res.redirect(config.paths.cancel + "?order=" + encodeURIComponent(orderId));
+      }
+
+      const payload = {
+        type: outcome === "failed" ? "failed" : "paid",
+        order_id: orderId,
+        session_id: order.payment.sessionId,
+        transaction_id: "mocktxn_" + Date.now(),
+        last4: "4242",
+      };
+      const rawBody = JSON.stringify(payload);
+      const signature = MockGateway.sign(rawBody);
+
+      try {
+        await fetch(config.urls.webhook, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Webhook-Signature": "sha256=" + signature },
+          body: rawBody,
+        });
+      } catch (e) {
+        console.error("[mock] webhook dispatch failed:", e.message);
+      }
+
+      const dest = outcome === "failed" ? config.paths.cancel : config.paths.success;
+      res.redirect(dest + "?order=" + encodeURIComponent(orderId));
+    } catch (err) {
+      console.error("[mock] complete failed:", err.message);
+      res.redirect("/cart.html");
+    }
   });
 }
 

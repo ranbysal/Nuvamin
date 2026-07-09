@@ -256,6 +256,11 @@ function renderReceipt(order) {
 async function deliver({ to, subject, text, html, replyTo }) {
   const t = getTransport();
   if (!t) {
+    if (config.isProduction) {
+      // Claiming success while only console-logging would silently drop real
+      // mail in production — surface it so callers return an honest error.
+      throw new Error("SMTP is not configured (set SMTP_HOST / SMTP_USER / SMTP_PASS).");
+    }
     console.log(
       `\n[email:DEV] "${subject}" -> ${to}${replyTo ? ` (reply-to ${replyTo})` : ""}\n` +
         `-------------------------------------------\n${text}\n-------------------------------------------\n`

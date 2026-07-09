@@ -49,6 +49,14 @@ function canTransition(from, to) {
   return (LEGAL_TRANSITIONS[from] || []).includes(to);
 }
 
+// Store-configuration failures carry a stable code so routes can map them to
+// a clean 503 instead of a generic crash.
+function configError(message) {
+  const err = new Error(message);
+  err.code = "ORDER_STORE_CONFIG";
+  return err;
+}
+
 /* ------------------------------------------------------------ file driver */
 
 const DATA_DIR = path.join(__dirname, "data");
@@ -99,7 +107,7 @@ const INDEX_KEY = "nv:orders"; // sorted set: score = createdAt epoch ms
 
 function makeRedisDriver() {
   if (!config.redis.url || !config.redis.token) {
-    throw new Error(
+    throw configError(
       "ORDER_STORE=redis but Redis credentials are missing. Set " +
         "UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN (the Vercel " +
         "Upstash integration injects these automatically)."
@@ -134,7 +142,7 @@ function buildDriver() {
   if (config.orderStore === "redis") return makeRedisDriver();
   if (config.orderStore === "file") {
     if (config.onVercel) {
-      throw new Error(
+      throw configError(
         "ORDER_STORE=file cannot run on Vercel — the serverless filesystem is " +
           "ephemeral and orders would be lost. Add the Upstash Redis integration " +
           "(Vercel → Storage → Upstash) or set ORDER_STORE=redis with credentials."
@@ -148,11 +156,30 @@ function buildDriver() {
     }
     return fileDriver;
   }
-  throw new Error(`Unknown ORDER_STORE "${config.orderStore}". Expected "file" or "redis".`);
+  throw configError(`Unknown ORDER_STORE "${config.orderStore}". Expected "file" or "redis".`);
 }
 
-const driver = buildDriver();
-console.log(`[nuvamin] order store: ${driver.name}`);
+// Resolved lazily on FIRST USE, never at import time. A misconfigured store
+// used to throw here at module load, which crashed the whole serverless
+// function and took /api/contact and /api/subscribe down with it. Now only
+// the order routes surface the error, per request.
+let driver = null;
+function getDriver() {
+  if (!driver) {
+    driver = buildDriver();
+    console.log(`[nuvamin] order store: ${driver.name}`);
+  }
+  return driver;
+}
+
+/** Non-throwing config probe for /api/health. */
+function storeStatus() {
+  try {
+    return { ok: true, driver: getDriver().name };
+  } catch (e) {
+    return { ok: false, error: e.message };
+  }
+}
 
 /* ---------------------------------------------------------------- model */
 
@@ -203,24 +230,25 @@ async function createOrder({ pricing, customer, shipping, currency }) {
     updatedAt: now,
     events: [{ at: now, type: "created", status: STATUS.PENDING }],
   };
-  await driver.insert(order);
+  await getDriver().insert(order);
   return order;
 }
 
 async function getOrder(id) {
   if (!id) return null;
-  return driver.get(id);
+  return getDriver().get(id);
 }
 
 async function updateOrder(id, mutator, eventType) {
-  const order = await driver.get(id);
+  const d = getDriver();
+  const order = await d.get(id);
   if (!order) return null;
   mutator(order);
   order.updatedAt = new Date().toISOString();
   if (eventType) {
     order.events.push({ at: order.updatedAt, type: eventType, status: order.status });
   }
-  await driver.put(order);
+  await d.put(order);
   return order;
 }
 
@@ -231,7 +259,7 @@ async function updateOrder(id, mutator, eventType) {
  * Callers use the null return to stay idempotent — no duplicate receipts.
  */
 async function setStatus(id, status, patch, eventType) {
-  const current = await driver.get(id);
+  const current = await getDriver().get(id);
   if (!current) return null;
   if (!canTransition(current.status, status)) {
     if (current.status !== status) {
@@ -250,7 +278,7 @@ async function setStatus(id, status, patch, eventType) {
 }
 
 async function listOrders({ status } = {}) {
-  let all = (await driver.list()).sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+  let all = (await getDriver().list()).sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
   if (status) all = all.filter((o) => o.status === status);
   return all;
 }
@@ -262,4 +290,5 @@ module.exports = {
   updateOrder,
   setStatus,
   listOrders,
+  storeStatus,
 };

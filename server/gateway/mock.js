@@ -10,8 +10,9 @@
  * lifecycle (pending → paid/failed/cancelled, receipt email, admin record)
  * is testable end-to-end WITHOUT any real credentials or real card data.
  *
- * Selected automatically when PAYMENT_PROVIDER=mock (the default) or when the
- * chosen real provider has no credentials configured yet.
+ * Selected only when PAYMENT_PROVIDER=mock (the development default). A real
+ * provider with missing credentials refuses to start — it never silently
+ * falls back to this simulator.
  */
 
 const crypto = require("crypto");
