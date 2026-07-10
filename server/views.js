@@ -3,8 +3,8 @@
 /**
  * Server-rendered HTML for the built-in MOCK hosted payment page.
  * This stands in for the gateway's real hosted page during development so the
- * redirect flow is fully testable. With a real provider (NMI/Authorize.Net)
- * this page is never shown — the customer lands on the provider's own page.
+ * redirect flow is fully testable. With Stripe this page is never shown; the
+ * customer lands on Stripe Checkout instead.
  *
  * The "card" inputs here are inert placeholders; nothing is transmitted or
  * stored. It exists only to drive the mock outcome buttons.

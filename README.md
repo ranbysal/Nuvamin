@@ -8,15 +8,15 @@ webhooks, receipts, admin records).
 
 - **Frontend** — static HTML + CSS + vanilla JS. No build step. Self-hosted
   fonts (Space Grotesk, Fraunces, Inter), real product photography (webp).
-- **Backend** — Node.js (≥20) + Express in `server/`. Redirect-based hosted
-  payment gateway behind a provider adapter (NMI intended; Authorize.Net stub;
-  built-in mock for development). **No card data ever touches this codebase**
-  — card entry happens on the gateway's PCI-compliant hosted page.
+- **Backend** — Node.js (≥20) + Express in `server/`. Stripe Checkout is the
+  production payment provider; a built-in mock is available only outside
+  production for development. **No card data ever touches this codebase** —
+  card entry happens on Stripe's hosted page.
 - **Order store** — Upstash Redis in production (`ORDER_STORE=redis`), JSON
   file for local development (`ORDER_STORE=file`).
 
 See [PAYMENTS.md](PAYMENTS.md) for the full payment architecture, order
-lifecycle, and NMI go-live checklist.
+lifecycle, and Stripe go-live checklist.
 
 ## Pages
 
@@ -67,16 +67,17 @@ the Express API as a serverless function (`api/index.js` + `vercel.json`).
    can't persist orders.)
 3. **Set environment variables** (Vercel → *Settings* → *Environment Variables*):
    - `PUBLIC_BASE_URL` — e.g. `https://your-domain.com` (drives return + webhook URLs)
-   - `PAYMENT_PROVIDER=nmi` + the `NMI_*` credentials (see `.env.example`;
-     until then, previews can use `PAYMENT_PROVIDER=mock` — note the mock
-     gateway refuses to run in production)
+   - `PAYMENT_PROVIDER=stripe`, `STRIPE_SECRET_KEY`, and
+     `STRIPE_WEBHOOK_SECRET` (see `.env.example`; local development and
+     previews can use `PAYMENT_PROVIDER=mock`, which is always rejected in
+     production)
    - `ADMIN_TOKEN` — long random string protecting `/admin/orders`
    - `SMTP_HOST/PORT/USER/PASS`, `RECEIPT_FROM`, `SUPPORT_EMAIL` — real receipts
 4. **Connect Google Workspace email + the order sheet** — contact-form
    delivery, customer receipts from the company address, new-order alerts,
    and the Google Sheets order log are all env-driven. Copy-paste setup:
    [GOOGLE-WORKSPACE-SETUP.md](GOOGLE-WORKSPACE-SETUP.md).
-5. **Register the webhook** in the NMI portal:
+5. **Register the webhook** in the Stripe Dashboard:
    `https://YOUR_DOMAIN/api/webhook/payment`.
 6. **Domain** — `sitemap.xml`, `robots.txt` and the `og:image` meta tags are
    set to the production domain `https://nuvamin.bio`. Remember to set
@@ -85,9 +86,8 @@ the Express API as a serverless function (`api/index.js` + `vercel.json`).
 
 ## Before go-live checklist
 
-- [ ] NMI credentials set; test a real transaction in NMI's sandbox
-- [ ] Field names in `server/gateway/nmi.js` reconciled with your NMI account
-      (marked `▼ TODO (go-live) ▼`)
+- [ ] Stripe credentials set and a Stripe test-mode Checkout completed
+- [ ] Stripe webhook registered and a signed test event received successfully
 - [ ] Legal pages (`privacy.html`, `terms.html`, `shipping-returns.html`)
       finalized by counsel — placeholders are marked `[PLACEHOLDER]`
 - [ ] VAT/sales-tax treatment decided and reflected in prices/terms

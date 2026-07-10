@@ -164,8 +164,8 @@ string (use a **different** one than the orders sheet). Save, then run
 
 1. On the live site: **Contact page** → send a test message → it should arrive
    in the `CONTACT_TO` inbox; hitting Reply should address the visitor.
-2. Place a test order (with the mock provider on a preview, or NMI's sandbox
-   when it's live):
+2. Place a test order (with the mock provider locally or on a preview, or
+   Stripe test mode when it is configured):
    - customer email receives the receipt **from the company address**,
    - `ORDER_NOTIFY_EMAIL` receives the "New order NV-… (paid)" alert with the
      shipping address,

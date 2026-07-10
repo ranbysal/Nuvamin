@@ -464,7 +464,7 @@ app.get("/admin/orders", requireAdmin, async (req, res) => {
 // Decided from config (not the gateway instance) so mounting never needs to
 // construct a gateway at import time.
 
-const mockRoutesActive = config.provider === "mock" && (!config.isProduction || config.allowMockInProduction);
+const mockRoutesActive = config.provider === "mock" && !config.isProduction;
 
 if (mockRoutesActive) {
   app.get("/mock-hosted", async (req, res) => {

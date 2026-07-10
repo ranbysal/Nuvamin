@@ -3,10 +3,8 @@
 /**
  * PaymentGateway — the provider-adapter contract.
  *
- * Every hosted-gateway integration (NMI now, Authorize.Net later, etc.)
- * implements this same interface, so the rest of the app never depends on a
- * specific processor. Swapping providers is a one-line change in config
- * (PAYMENT_PROVIDER) plus filling in that provider's credentials.
+ * Stripe and the local development mock implement this interface, so the rest
+ * of the app does not contain provider-specific checkout logic.
  *
  * Contract:
  *

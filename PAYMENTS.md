@@ -1,13 +1,9 @@
 # Nuvamin — Checkout & Payments
 
-A **redirect-based hosted-gateway** checkout. Card data is entered only on the
-payment provider's PCI-compliant hosted page — **this site never sees, handles,
-or stores card details** (PCI SAQ-A posture). Payments run through a **provider
-adapter** so the processor can be swapped without touching the rest of the app.
-
-- **Intended provider:** NMI (Network Merchants Inc.), hosted redirect checkout.
-- **Swappable to:** Authorize.Net (adapter stub already wired), or any hosted
-  gateway that supports a create-session → redirect → webhook flow.
+A **redirect-based Stripe Checkout** integration. Card data is entered only on
+Stripe's hosted page — **this site never sees, handles, or stores card
+details**. A mock adapter remains available strictly for local development and
+non-production previews.
 
 ## Architecture
 
@@ -21,7 +17,7 @@ Server  ── prices order from server-side catalog (client price is never trus
         ── gateway.createCheckoutSession(order)   →  { redirectUrl }
    │  302 redirect
    ▼
-Hosted gateway page (NMI / Authorize.Net / built-in mock)
+Stripe Checkout (or the built-in mock outside production)
    │  customer pays  →  gateway redirects back  +  sends signed webhook
    ├──────────────► GET /checkout/success → confirmation.html (polls status)
    ├──────────────► GET /checkout/cancel  → failed.html (retry)
@@ -66,8 +62,7 @@ safe projection only — never the shipping address or internal event log.
 | `vercel.json` | Vercel routing: API → function, pages/assets → CDN, nothing else exposed |
 | `server/email.js` | Customer receipts, new-order notifications, contact-form delivery (SMTP, or console in dev) |
 | `server/gateway/base.js` | The `PaymentGateway` adapter contract |
-| `server/gateway/nmi.js` | **NMI** hosted-checkout adapter |
-| `server/gateway/authorizenet.js` | Authorize.Net adapter (stub for future swap) |
+| `server/gateway/stripe.js` | Stripe Checkout session creation + webhook verification |
 | `server/gateway/mock.js` | Built-in simulated hosted gateway (dev/testing) |
 | `server/gateway/index.js` | Factory — selects adapter from `PAYMENT_PROVIDER` |
 | `cart.html` | Cart review + checkout button (→ `/api/checkout`) |
@@ -104,34 +99,27 @@ Admin records:
 curl -H "Authorization: Bearer <ADMIN_TOKEN>" http://localhost:3000/admin/orders
 ```
 
-## Going live with NMI
+## Going live with Stripe
 
-1. In `.env`, set `PAYMENT_PROVIDER=nmi` and fill the NMI values (each is
-   marked `REPLACE_WITH_…` in `.env.example`):
-   - `NMI_PROCESSOR_ACCOUNT_ID` — processor / gateway account ID
-   - `NMI_SECURITY_KEY` — private API security key
-   - `NMI_WEBHOOK_SECRET` — webhook signing secret
-   - `NMI_CHECKOUT_URL` — hosted-checkout endpoint for your account
-2. Set `PUBLIC_BASE_URL` to your real domain (drives the return + webhook URLs).
-3. In the NMI portal, register the webhook URL: `https://YOUR_DOMAIN/api/webhook/payment`.
-4. In `server/gateway/nmi.js`, reconcile the request/response field names and the
-   webhook signature header with your NMI account's integration guide — the exact
-   spots are marked `▼ TODO (go-live) ▼`.
-5. Set a strong `ADMIN_TOKEN`, and configure SMTP (`SMTP_*`) for real receipts.
-
-## Swapping to Authorize.Net later
-
-Set `PAYMENT_PROVIDER=authorizenet`, provide `AUTHNET_*` env vars, and complete
-the `getHostedPaymentPageRequest` call in `server/gateway/authorizenet.js`
-(Accept Hosted flow). No other code changes — the app only talks to the adapter
-interface.
+1. In Vercel Production, set `PAYMENT_PROVIDER=stripe`.
+2. Add `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` from the approved Stripe
+   account. `STRIPE_CHECKOUT_URL` normally uses the default in `.env.example`.
+3. Set `PUBLIC_BASE_URL=https://nuvamin.bio` so return and webhook URLs use the
+   production domain.
+4. In the Stripe Dashboard, register
+   `https://nuvamin.bio/api/webhook/payment` and subscribe it to the Checkout,
+   PaymentIntent, expiration, and refund events handled by
+   `server/gateway/stripe.js`.
+5. Redeploy, then confirm `/api/health` reports `provider: "stripe"` and run a
+   test-mode Checkout before enabling live mode.
+6. Set a strong `ADMIN_TOKEN` and configure SMTP (`SMTP_*`) for real receipts.
 
 ## Security posture
 
-- **Fail-fast provider selection** — a real provider without complete
-  credentials (or the mock provider in production) refuses to boot; payments
-  can never silently degrade to the forgeable simulated gateway. The
-  `/mock-hosted` routes are only mounted when the mock provider is active.
+- **Fail-fast provider selection** — Stripe without complete credentials and
+  the mock provider in production both refuse to construct. There is no
+  production override for the mock. `/mock-hosted` routes are mounted only
+  outside production when the mock provider is active.
 - **Static allowlist** — the Express host serves only pages, `assets/` and SEO
   files. `server/`, order data, `package.json`, docs and dotfiles are never
   reachable over HTTP (Vercel's routing enforces the same boundary).
