@@ -9,9 +9,11 @@ non-production previews.
 
 ```
 Browser (cart.html)
-   │  POST /api/checkout   { cart, customer.email, shipping address }
+   │  Google sign-in + POST /api/research-verification
+   │  POST /api/checkout   { cart, shipping address, signed verification token }
    ▼
 Server  ── prices order from server-side catalog (client price is never trusted)
+        ── verifies the HttpOnly Google session + matching acknowledgement
         ── validates email + shipping address server-side
         ── creates a PENDING order   (backend order creation BEFORE payment)
         ── gateway.createCheckoutSession(order)   →  { redirectUrl }
@@ -54,6 +56,7 @@ safe projection only — never the shipping address or internal event log.
 | --- | --- |
 | `server/app.js` | Express app: routes, validation, rate limiting, static hosting (allowlisted) |
 | `server/config.js` | Env loader + typed config (all credentials via env) |
+| `server/auth.js` | Google ID-token verification, signed sessions, researcher tokens |
 | `server/catalog.js` | Authoritative server-side prices |
 | `server/orders.js` | Order model + enforced status lifecycle + file/redis store drivers |
 | `server/sheets.js` | Google Sheets order log (posts each paid order to the client's sheet) |
@@ -65,7 +68,7 @@ safe projection only — never the shipping address or internal event log.
 | `server/gateway/stripe.js` | Stripe Checkout session creation + webhook verification |
 | `server/gateway/mock.js` | Built-in simulated hosted gateway (dev/testing) |
 | `server/gateway/index.js` | Factory — selects adapter from `PAYMENT_PROVIDER` |
-| `cart.html` | Cart review + checkout button (→ `/api/checkout`) |
+| `cart.html` | Google sign-in, researcher acknowledgement, cart review + checkout |
 | `confirmation.html` | Success page (polls until `paid`) |
 | `failed.html` | Failure/cancel page with **retry** button |
 
@@ -73,6 +76,11 @@ safe projection only — never the shipping address or internal event log.
 
 | Method & path | Role |
 | --- | --- |
+| `GET /api/auth/config` | Public Google client id + verification version/status |
+| `POST /api/auth/google` | Verify Google ID token and create HttpOnly session |
+| `GET /api/auth/session` | Return safe signed-in account projection |
+| `POST /api/auth/logout` | Clear the first-party session |
+| `POST /api/research-verification` | Issue account-bound cart acknowledgement |
 | `POST /api/checkout` | Create pending order + hosted session → `{ redirectUrl }` |
 | `GET /checkout/success` | Gateway success return → confirmation page |
 | `GET /checkout/cancel` | Gateway cancel return → failed page |
@@ -112,7 +120,10 @@ curl -H "Authorization: Bearer <ADMIN_TOKEN>" http://localhost:3000/admin/orders
    `server/gateway/stripe.js`.
 5. Redeploy, then confirm `/api/health` reports `provider: "stripe"` and run a
    test-mode Checkout before enabling live mode.
-6. Set a strong `ADMIN_TOKEN` and configure SMTP (`SMTP_*`) for real receipts.
+6. Create a Google OAuth 2.0 Web client, allow `https://nuvamin.bio` as an
+   authorized JavaScript origin, then set `GOOGLE_CLIENT_ID` and a randomly
+   generated 32+ character `AUTH_SESSION_SECRET` in Vercel.
+7. Set a strong `ADMIN_TOKEN` and configure SMTP (`SMTP_*`) for real receipts.
 
 ## Security posture
 
@@ -127,6 +138,9 @@ curl -H "Authorization: Bearer <ADMIN_TOKEN>" http://localhost:3000/admin/orders
   token uses `crypto.timingSafeEqual` too.
 - **Input hardening** — server-side email + shipping-address validation, 32 kb
   body cap, and per-IP rate limiting on `POST /api/checkout`.
+- **Checkout identity** — Google ID tokens are verified server-side with
+  Google's official Node library. Sessions use Secure, HttpOnly, SameSite
+  cookies, and the signed researcher token is short-lived and account-bound.
 - All dynamic values in the mock hosted page are HTML-escaped.
 
 ## Notes & production hardening

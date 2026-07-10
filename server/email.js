@@ -290,6 +290,10 @@ async function sendReceipt(order) {
  * everything fulfilment needs: items, totals, customer contact, address.
  */
 async function sendOrderNotification(order) {
+  const verification = order.researchVerification || {};
+  const verificationText = verification.acceptedAt
+    ? `Researcher verification: ${verification.version || "recorded"} at ${verification.acceptedAt}\n`
+    : "Researcher verification: missing\n";
   const lines = order.items
     .map((i) => `  ${i.quantity} x ${i.name} ${i.mg}  —  ${money(i.lineTotal, order.currency)}`)
     .join("\n");
@@ -299,6 +303,7 @@ async function sendOrderNotification(order) {
     `Order:    ${order.id}\n` +
     `Placed:   ${order.createdAt}\n` +
     `Customer: ${order.customer.name || "—"} <${order.customer.email}>\n` +
+    verificationText +
     (order.payment && order.payment.transactionId ? `Txn:      ${order.payment.transactionId}\n` : "") +
     `\n${lines}\n\n` +
     `Subtotal: ${money(order.subtotal, order.currency)}\n` +
@@ -312,6 +317,11 @@ async function sendOrderNotification(order) {
     `<h2 style="letter-spacing:.14em">NUVAMIN — new paid order</h2>` +
     `<p><strong>${escHtml(order.id)}</strong> &middot; ${escHtml(order.createdAt)}</p>` +
     `<p>Customer: ${escHtml(order.customer.name || "—")} &lt;${escHtml(order.customer.email)}&gt;</p>` +
+    `<p style="font-size:13px;color:#333"><strong>Researcher verification:</strong> ${
+      verification.acceptedAt
+        ? escHtml((verification.version || "recorded") + " at " + verification.acceptedAt)
+        : '<span style="color:#a00">missing</span>'
+    }</p>` +
     `<table style="width:100%;border-collapse:collapse;font-size:14px">` +
     order.items
       .map(

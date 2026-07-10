@@ -46,6 +46,10 @@ function rowFor(order) {
     address: addressLines.join("\n"),
     transactionId: (order.payment && order.payment.transactionId) || "",
     provider: (order.payment && order.payment.provider) || "",
+    identityProvider: (order.account && order.account.provider) || "",
+    authenticatedAccountId: (order.account && order.account.id) || "",
+    verificationVersion: (order.researchVerification && order.researchVerification.version) || "",
+    researcherVerifiedAt: (order.researchVerification && order.researchVerification.acceptedAt) || "",
   };
 }
 

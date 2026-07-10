@@ -193,7 +193,7 @@ function genId() {
  * Create a pending order from priced totals + customer contact & shipping.
  * This is the "backend order creation before payment" step.
  */
-async function createOrder({ pricing, customer, shipping, currency }) {
+async function createOrder({ pricing, customer, shipping, currency, account, researchVerification }) {
   const now = new Date().toISOString();
   const order = {
     id: genId(),
@@ -209,6 +209,25 @@ async function createOrder({ pricing, customer, shipping, currency }) {
       email: (customer && customer.email) || "",
       name: (customer && customer.name) || "",
     },
+    account: account
+      ? {
+          provider: "google",
+          id: account.id || "",
+          email: account.email || "",
+          name: account.name || "",
+        }
+      : null,
+    researchVerification: researchVerification
+      ? {
+          version: researchVerification.version || "",
+          age21: researchVerification.age21 === true,
+          qualifiedResearcher: researchVerification.qualifiedResearcher === true,
+          researchUseOnly: researchVerification.researchUseOnly === true,
+          acceptedAt: researchVerification.acceptedAt || "",
+          authenticatedAccountId: researchVerification.authenticatedAccountId || "",
+          authenticatedEmail: researchVerification.authenticatedEmail || "",
+        }
+      : null,
     shippingAddress: shipping
       ? {
           name: shipping.name || "",

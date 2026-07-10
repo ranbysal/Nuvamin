@@ -12,6 +12,9 @@ webhooks, receipts, admin records).
   production payment provider; a built-in mock is available only outside
   production for development. **No card data ever touches this codebase** —
   card entry happens on Stripe's hosted page.
+- **Access control** — Google Identity Services verifies the account before a
+  non-empty cart can be viewed. The server issues an HttpOnly signed session
+  and requires a second, server-signed researcher acknowledgement at checkout.
 - **Order store** — Upstash Redis in production (`ORDER_STORE=redis`), JSON
   file for local development (`ORDER_STORE=file`).
 
@@ -28,7 +31,7 @@ lifecycle, and Stripe go-live checklist.
 | `about.html` | Standards, process, founder note |
 | `journal.html` | Editorial articles |
 | `contact.html` | Contact form, FAQ |
-| `cart.html` | Cart + delivery details + checkout (→ hosted gateway) |
+| `cart.html` | Google-authenticated cart + researcher acknowledgement + checkout |
 | `confirmation.html` / `failed.html` | Payment result pages (poll order status) |
 | `privacy.html` / `terms.html` / `shipping-returns.html` | Policy pages — **placeholder legal copy, counsel must finalize** |
 | `404.html`, `robots.txt`, `sitemap.xml` | Standard site furniture |
@@ -71,6 +74,8 @@ the Express API as a serverless function (`api/index.js` + `vercel.json`).
      `STRIPE_WEBHOOK_SECRET` (see `.env.example`; local development and
      previews can use `PAYMENT_PROVIDER=mock`, which is always rejected in
      production)
+   - `GOOGLE_CLIENT_ID` and a 32+ character `AUTH_SESSION_SECRET`; the Google
+     OAuth web client must allow `https://nuvamin.bio` as a JavaScript origin
    - `ADMIN_TOKEN` — long random string protecting `/admin/orders`
    - `SMTP_HOST/PORT/USER/PASS`, `RECEIPT_FROM`, `SUPPORT_EMAIL` — real receipts
 4. **Connect Google Workspace email + the order sheet** — contact-form
@@ -88,6 +93,9 @@ the Express API as a serverless function (`api/index.js` + `vercel.json`).
 
 - [ ] Stripe credentials set and a Stripe test-mode Checkout completed
 - [ ] Stripe webhook registered and a signed test event received successfully
+- [ ] Google OAuth web client configured for `https://nuvamin.bio`
+- [ ] `GOOGLE_CLIENT_ID` and a strong `AUTH_SESSION_SECRET` set in Vercel
+- [ ] Site gate and authenticated cart acknowledgement tested on desktop/mobile
 - [ ] Legal pages (`privacy.html`, `terms.html`, `shipping-returns.html`)
       finalized by counsel — placeholders are marked `[PLACEHOLDER]`
 - [ ] VAT/sales-tax treatment decided and reflected in prices/terms
