@@ -58,14 +58,14 @@
     document.getElementById("pdp").innerHTML =
       '<div class="pdp-media-col" style="background:' + p.panel + '"><div class="pdp-media">' + nvProductImg(p) + "</div></div>" +
       '<div class="pdp-info">' +
-      '<p class="pdp-cat">' + p.category + " &mdash; " + p.mg + " &middot; " + p.form + "</p>" +
+      '<p class="pdp-cat">' + p.mg + " &middot; " + p.form + "</p>" +
       '<h1 class="h-display pdp-title">' + p.name + "</h1>" +
       '<p class="pdp-sub">' + p.sub + "</p>" +
       '<p class="pdp-price">$' + p.price.toFixed(2) + '</p>' +
       '<p class="pdp-form">' + p.mg + " per vial &middot; " + p.form + "</p>" +
       '<p class="pdp-blurb">' + p.blurb + "</p>" +
       '<p class="pdp-context">Research application</p>' +
-      '<ul class="pdp-benefits">' + research + "</ul>" +
+      '<ul class="pdp-research">' + research + "</ul>" +
       '<div class="pdp-buy">' +
       '<div class="qty"><button type="button" data-q="-1" aria-label="Decrease quantity">&minus;</button><output id="qty-out">1</output><button type="button" data-q="1" aria-label="Increase quantity">+</button></div>' +
       '<button class="btn" id="pdp-add">Add to cart &mdash; $<span id="pdp-total">' + p.price.toFixed(2) + "</span></button>" +

@@ -233,7 +233,6 @@ function nvProductCard(p, i) {
     '<article class="pcard reveal" style="--d:' + (i * 70) + 'ms">' +
     '<a class="pcard-media" href="product.html?id=' + p.id + '" style="background:' + p.panel + '">' +
     '<div class="pcard-render">' + nvProductImg(p) + '</div>' +
-    '<span class="pcard-tag">' + p.category + '</span>' +
     '</a>' +
     '<div class="pcard-meta">' +
     '<div class="pcard-row"><h3 class="pcard-name"><a href="product.html?id=' + p.id + '">' + p.name + " " + p.mg + '</a></h3>' +
