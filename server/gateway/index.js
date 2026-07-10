@@ -17,6 +17,7 @@
 const config = require("../config");
 const NmiGateway = require("./nmi");
 const AuthorizeNetGateway = require("./authorizenet");
+const StripeGateway = require("./stripe");
 const MockGateway = require("./mock");
 
 let instance = null;
@@ -50,6 +51,16 @@ function build() {
       }
       return g;
     }
+    case "stripe": {
+      const g = new StripeGateway();
+      if (!g.isConfigured()) {
+        throw configError(
+          "PAYMENT_PROVIDER=stripe but Stripe credentials are missing " +
+            "(STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET). Refusing to start."
+        );
+      }
+      return g;
+    }
     case "mock": {
       if (config.isProduction && !config.allowMockInProduction) {
         throw configError(
@@ -61,7 +72,7 @@ function build() {
     }
     default:
       throw configError(
-        `Unknown PAYMENT_PROVIDER "${config.provider}". Expected "nmi", "authorizenet" or "mock".`
+        `Unknown PAYMENT_PROVIDER "${config.provider}". Expected "nmi", "authorizenet", "stripe" or "mock".`
       );
   }
 }

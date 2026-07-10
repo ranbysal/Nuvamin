@@ -42,7 +42,7 @@ const config = {
   onVercel: ON_VERCEL,
   isProduction: IS_PRODUCTION,
 
-  // "nmi" | "authorizenet" | "mock"
+  // "nmi" | "authorizenet" | "stripe" | "mock"
   provider: (env.PAYMENT_PROVIDER || "mock").toLowerCase(),
   // Explicit opt-in required to run the simulated gateway in production.
   allowMockInProduction: env.ALLOW_MOCK_GATEWAY === "true",
@@ -74,6 +74,12 @@ const config = {
     processorAccountId: env.NMI_PROCESSOR_ACCOUNT_ID || "",
     securityKey: env.NMI_SECURITY_KEY || "",
     webhookSecret: env.NMI_WEBHOOK_SECRET || "",
+  },
+
+  stripe: {
+    checkoutUrl: env.STRIPE_CHECKOUT_URL || "https://api.stripe.com/v1/checkout/sessions",
+    secretKey: env.STRIPE_SECRET_KEY || "",
+    webhookSecret: env.STRIPE_WEBHOOK_SECRET || "",
   },
 
   authnet: {
