@@ -30,9 +30,6 @@
     '<div class="wrap footer-grid">' +
     '<div class="footer-brand"><span class="brand" style="text-align:left;text-indent:0">Nuvamin</span>' +
     "<p>Research-grade peptides, independently verified lot by lot. Identity by mass spectrometry, purity by HPLC, certificates published for every batch.</p></div>" +
-    '<div><h4 class="footer-h">Catalogue</h4><ul>' +
-    '<li><a href="shop.html">All compounds</a></li>' +
-    "</ul></div>" +
     '<div><h4 class="footer-h">Company</h4><ul>' +
     '<li><a href="about.html">About</a></li>' +
     '<li><a href="journal.html">Journal</a></li>' +
