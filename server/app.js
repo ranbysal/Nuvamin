@@ -5,11 +5,6 @@
  *
  * Route map:
  *   GET  /api/health              boot + configuration diagnostics (no secrets)
- *   GET  /api/auth/config         public Google sign-in configuration
- *   POST /api/auth/google         verify Google identity + create session
- *   GET  /api/auth/session        current signed-in account
- *   POST /api/auth/logout         clear first-party session
- *   POST /api/research-verification  issue signed cart acknowledgement
  *   POST /api/checkout            create pending order + hosted session -> {redirectUrl}
  *   GET  /checkout/success        gateway return (success) -> confirmation page
  *   GET  /checkout/cancel         gateway return (cancel)  -> failed page
@@ -27,7 +22,6 @@ const crypto = require("crypto");
 const express = require("express");
 
 const config = require("./config");
-const auth = require("./auth");
 const catalog = require("./catalog");
 const orders = require("./orders");
 const email = require("./email");
@@ -89,7 +83,6 @@ function makeRateLimit(max, windowMs, message) {
 
 const rateLimitCheckout = makeRateLimit(10, 60_000, "Too many checkout attempts. Please wait a minute.");
 const rateLimitContact = makeRateLimit(5, 60_000, "Too many messages. Please wait a minute and try again.");
-const rateLimitAuth = makeRateLimit(10, 60_000, "Too many sign-in attempts. Please wait a minute.");
 
 /* ------------------------------------------------------------ validation */
 
@@ -131,90 +124,12 @@ function validateCustomer(body) {
   };
 }
 
-/* --------------------------------------------------------------- identity */
-
-app.get("/api/auth/config", (_req, res) => {
-  res.set("Cache-Control", "no-store");
-  const status = auth.configStatus();
-  res.json({
-    configured: status.ok,
-    clientId: status.googleClientId ? config.auth.googleClientId : "",
-    researchVersion: config.researchVerification.version,
-  });
-});
-
-app.get("/api/auth/session", (req, res) => {
-  res.set("Cache-Control", "no-store");
-  const status = auth.configStatus();
-  let user = null;
-  if (status.ok) {
-    try {
-      user = auth.getSession(req);
-    } catch (_err) {
-      user = null;
-    }
-  }
-  res.json({
-    configured: status.ok,
-    authenticated: Boolean(user),
-    user: auth.safeUser(user),
-    researchVersion: config.researchVerification.version,
-  });
-});
-
-app.post("/api/auth/google", rateLimitAuth, auth.requireSameOrigin, async (req, res) => {
-  try {
-    const user = await auth.verifyGoogleCredential(cleanStr(req.body && req.body.credential, 8192));
-    if (!user) return res.status(401).json({ error: "Google could not verify that account." });
-    auth.setSessionCookie(res, user);
-    return res.json({ ok: true, user: auth.safeUser(user) });
-  } catch (err) {
-    if (err.code === "AUTH_CONFIG") {
-      return res.status(503).json({ error: "Google sign-in is not configured yet." });
-    }
-    console.error("[auth] Google verification failed:", err.message);
-    return res.status(502).json({ error: "Google sign-in is temporarily unavailable." });
-  }
-});
-
-app.post("/api/auth/logout", auth.requireSameOrigin, (req, res) => {
-  auth.clearSessionCookie(res);
-  res.json({ ok: true });
-});
-
-app.post(
-  "/api/research-verification",
-  rateLimitAuth,
-  auth.requireSameOrigin,
-  auth.requireAuth,
-  (req, res) => {
-    const body = req.body || {};
-    if (
-      body.age21 !== true ||
-      body.qualifiedResearcher !== true ||
-      body.researchUseOnly !== true
-    ) {
-      return res.status(400).json({ error: "Complete both researcher confirmations to continue." });
-    }
-    const result = auth.issueResearchVerification(req.user);
-    return res.json({
-      ok: true,
-      verificationToken: result.token,
-      record: result.record,
-    });
-  }
-);
-
 /* ---------------------------------------------------------------- checkout */
 
 // Create the order (pending) BEFORE payment, then open a hosted session.
-app.post(
-  "/api/checkout",
-  rateLimitCheckout,
-  auth.requireSameOrigin,
-  auth.requireAuth,
-  async (req, res) => {
+app.post("/api/checkout", rateLimitCheckout, async (req, res) => {
   try {
+    const gw = gateway(); // resolve first — a config error must not create an orphan order
     const rawCart = (req.body && req.body.cart) || {};
     const pricing = catalog.priceOrder(rawCart);
 
@@ -222,28 +137,10 @@ app.post(
       return res.status(400).json({ error: "Your cart is empty." });
     }
 
-    const requestBody = Object.assign({}, req.body, {
-      customer: Object.assign({}, (req.body && req.body.customer) || {}, {
-        email: req.user.email,
-      }),
-    });
-    const checked = validateCustomer(requestBody);
+    const checked = validateCustomer(req.body);
     if (checked.error) {
       return res.status(400).json({ error: checked.error });
     }
-    checked.customer.email = req.user.email;
-
-    const researchVerification = auth.verifyResearchVerification(
-      req.body && req.body.researchVerificationToken,
-      req.user
-    );
-    if (!researchVerification) {
-      return res.status(403).json({
-        error: "Complete the researcher acknowledgement before checkout.",
-      });
-    }
-
-    const gw = gateway(); // resolve before order creation so config errors cannot create orphan orders
 
     // Optional first-order discount code (the Lot Report welcome offer).
     const codeInput = cleanStr(req.body && req.body.discountCode, 40).toUpperCase();
@@ -268,8 +165,6 @@ app.post(
       customer: checked.customer,
       shipping: checked.shipping,
       currency: config.currency,
-      account: auth.safeUser(req.user),
-      researchVerification,
     });
 
     const session = await gw.createCheckoutSession(order, config.urls);
@@ -285,19 +180,14 @@ app.post(
 
     return res.json({ orderId: order.id, redirectUrl: session.redirectUrl });
   } catch (err) {
-    if (
-      err.code === "GATEWAY_CONFIG" ||
-      err.code === "ORDER_STORE_CONFIG" ||
-      err.code === "AUTH_CONFIG"
-    ) {
+    if (err.code === "GATEWAY_CONFIG" || err.code === "ORDER_STORE_CONFIG") {
       console.error("[checkout] unavailable — configuration:", err.message);
       return res.status(503).json({ error: "Checkout isn't available right now. Please try again later." });
     }
     console.error("[checkout] error:", err.message);
     return res.status(502).json({ error: "Unable to start checkout. Please try again." });
   }
-  }
-);
+});
 
 /* ------------------------------------------------------------------ health */
 
@@ -319,8 +209,6 @@ app.get("/api/health", (req, res) => {
     checks: {
       orderStore: orders.storeStatus(),
       gateway: gatewayCheck,
-      googleAuth: auth.configStatus(),
-      researchVerification: { version: config.researchVerification.version },
       email: { configured: Boolean(config.email.host && config.email.user) },
       ordersSheet: { configured: Boolean(config.sheets.webhookUrl) },
       subscribersSheet: { configured: Boolean(config.subscribers.webhookUrl) },

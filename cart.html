@@ -27,25 +27,13 @@
 </section>
 
 <section class="section" style="padding-top:0">
-  <div class="wrap cart-access-shell is-locked" id="cart-access-shell">
-    <section class="cart-access-panel" id="cart-access-panel" aria-labelledby="cart-access-title" aria-live="polite">
-      <p class="kicker no-rule">Restricted checkout</p>
-      <h2 id="cart-access-title">Checking account access</h2>
-      <p id="cart-access-copy">Confirming your Google session and researcher-verification status.</p>
-      <div class="google-signin-button" id="google-signin-button" hidden></div>
-      <button class="btn" id="cart-acknowledge" type="button" hidden>Acknowledge</button>
-      <p class="cart-access-status" id="cart-access-status" role="status">Please wait&hellip;</p>
-      <button class="cart-signout" id="cart-signout" type="button" hidden>Use another Google account</button>
-    </section>
-    <div id="cart-root" aria-live="polite"></div>
-  </div>
+  <div class="wrap" id="cart-root" aria-live="polite"></div>
 </section>
 
 <footer class="site-footer"></footer>
 
 <script src="assets/js/products.js"></script>
 <script src="assets/js/main.js"></script>
-<script src="assets/js/access.js"></script>
 <script>
   (function () {
     var root = document.getElementById("cart-root");
@@ -80,7 +68,6 @@
           '<a class="btn" href="shop.html">Browse the range <span class="arr">&rarr;</span></a>' +
           "</div>";
         firstRender = false;
-        document.dispatchEvent(new CustomEvent("nv:cart-rendered", { detail: { empty: true } }));
         return;
       }
 
@@ -134,7 +121,6 @@
         if (el && saved[k]) el.value = saved[k];
       });
       firstRender = false;
-      document.dispatchEvent(new CustomEvent("nv:cart-rendered", { detail: { empty: false } }));
     }
 
     function fieldVal(k) {
@@ -148,14 +134,6 @@
       if (busy) return;
       var cart = nvCart.read();
       if (!Object.keys(cart).length) { nvToast("Your cart is empty"); return; }
-      var researchToken = window.nvAccess && window.nvAccess.getCartVerificationToken
-        ? window.nvAccess.getCartVerificationToken()
-        : "";
-      if (!researchToken) {
-        nvToast("Sign in and complete the researcher acknowledgement first");
-        if (window.nvAccess && window.nvAccess.ensureCartAccess) window.nvAccess.ensureCartAccess();
-        return;
-      }
 
       var vals = {
         email: fieldVal("email"), name: fieldVal("name"),
@@ -193,17 +171,13 @@
               name: vals.name, line1: vals.line1, line2: vals.line2,
               city: vals.city, postalCode: vals.postal, country: vals.country
             },
-            discountCode: vals.code,
-            researchVerificationToken: researchToken
+            discountCode: vals.code
           })
         });
         var data = await res.json().catch(function () { return {}; });
         if (res.ok && data.redirectUrl) {
           window.location.href = data.redirectUrl; // -> hosted gateway page
           return;
-        }
-        if ((res.status === 401 || res.status === 403) && window.nvAccess) {
-          window.nvAccess.invalidateCartAccess(res.status);
         }
         nvToast(data.error || "Checkout is unavailable right now");
       } catch (err) {

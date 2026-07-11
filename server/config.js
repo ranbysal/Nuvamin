@@ -72,24 +72,6 @@ const config = {
     webhookSecret: env.STRIPE_WEBHOOK_SECRET || "",
   },
 
-  auth: {
-    // Public OAuth client id used by Google Identity Services in the browser.
-    googleClientId: env.GOOGLE_CLIENT_ID || "",
-    // HMAC key for first-party HttpOnly sessions and cart verification tokens.
-    sessionSecret: env.AUTH_SESSION_SECRET || "",
-  },
-
-  researchVerification: {
-    // Bump this value whenever the confirmations or underlying terms change.
-    version: env.RESEARCH_VERIFICATION_VERSION || "2026-07-10",
-    // The cart acknowledgement is deliberately short-lived and tied to the
-    // authenticated Google account that completed it.
-    cartTokenMinutes: Math.min(
-      24 * 60,
-      Math.max(5, parseInt(env.RESEARCH_VERIFICATION_TOKEN_MINUTES || "120", 10) || 120)
-    ),
-  },
-
   email: {
     host: env.SMTP_HOST || "",
     port: parseInt(env.SMTP_PORT || "587", 10),

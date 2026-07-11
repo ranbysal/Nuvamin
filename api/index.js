@@ -9,8 +9,7 @@
  *
  * Requires on Vercel:
  *   - Upstash Redis integration (Storage tab) → order store
- *   - PUBLIC_BASE_URL, PAYMENT_PROVIDER + provider creds
- *   - GOOGLE_CLIENT_ID, AUTH_SESSION_SECRET, ADMIN_TOKEN, SMTP_*
+ *   - PUBLIC_BASE_URL, PAYMENT_PROVIDER + provider creds, ADMIN_TOKEN, SMTP_*
  */
 
 module.exports = require("../server/app");
