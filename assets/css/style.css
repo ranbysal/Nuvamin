@@ -615,8 +615,9 @@ body.hero-go .hero-baseline { animation: heroFadeUp 1.05s 1.4s var(--ease) forwa
 .site-footer { background: var(--ink); color: var(--cream); padding-top: clamp(56px, 6vw, 96px); }
 .footer-grid {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr;
-  gap: clamp(28px, 4vw, 64px);
+  grid-template-columns: minmax(0, 1fr) max-content max-content;
+  column-gap: clamp(36px, 2.5vw, 48px);
+  row-gap: clamp(28px, 4vw, 64px);
   padding-bottom: clamp(48px, 5vw, 80px);
 }
 .footer-brand p { color: rgba(255, 255, 255, 0.5); font-size: 13.5px; max-width: 30ch; margin-top: 18px; }
@@ -1247,6 +1248,7 @@ body.page-out { opacity: 0; transition: opacity 0.24s ease; }
   .life-c { grid-column: 8 / span 5; }
   .price-grid { grid-template-columns: 1fr; }
   .footer-grid { grid-template-columns: 1fr 1fr; }
+  .footer-brand { grid-column: 1 / -1; }
   .cart-summary { position: static; }
 }
 @media (max-width: 640px) {
