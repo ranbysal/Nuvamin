@@ -508,41 +508,109 @@ body.hero-go .hero-baseline { animation: heroFadeUp 1.05s 1.4s var(--ease) forwa
 /* ---------- lifestyle band ---------- */
 
 .life { background: var(--mist); }
-.life-grid {
+
+/* Editorial photo-mosaic: four cinematic frames set asymmetrically on the
+   12-col mist ground, staggered by margin-offset, each with a clip-wipe
+   entrance, an oversized ghost numeral, and an always-visible research
+   caption. Three transform owners never collide: drift on .life-fig,
+   clip-wipe on .life-media, scale/lift on .life-img. */
+.life-mosaic {
   display: grid;
   grid-template-columns: repeat(12, 1fr);
-  gap: clamp(14px, 1.6vw, 24px);
-  align-items: end;
+  column-gap: var(--gutter);
+  row-gap: clamp(48px, 7vw, 120px);
+  align-items: start;
+  margin-top: clamp(48px, 6vw, 96px);
 }
-.life-a { grid-column: 1 / span 5; }
-.life-b { grid-column: 6 / span 4; }
-.life-c { grid-column: 10 / span 3; }
-.life-tile { position: relative; overflow: hidden; }
-.life-tile figure { transition: transform 1s var(--ease); }
-.life-tile:hover figure { transform: scale(1.03); }
-.life-tile figcaption {
-  position: absolute;
-  left: 16px; bottom: 14px;
-  font-family: var(--display);
-  font-size: 10px;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: var(--cream);
-  mix-blend-mode: normal;
+.life-rule { grid-column: 1 / -1; height: 1px; background: var(--line); }
+
+.life-fig { position: relative; margin-top: var(--offset, 0); }
+.life-fig--1 { grid-column: 1 / span 7; }
+.life-fig--2 { grid-column: 8 / span 5; }
+.life-fig--3 { grid-column: 2 / span 5; }
+.life-fig--4 { grid-column: 7 / span 6; }
+.life-fig--1 .life-media { aspect-ratio: 16 / 9; }
+.life-fig--2 .life-media { aspect-ratio: 4 / 5; }
+.life-fig--3 .life-media { aspect-ratio: 5 / 4; }
+.life-fig--4 .life-media { aspect-ratio: 3 / 2; }
+
+.life-num {
+  position: absolute; top: -0.34em; left: -0.04em; z-index: 0;
+  font-family: var(--display); font-weight: 600;
+  font-size: clamp(80px, 10vw, 180px); line-height: 1; letter-spacing: -0.02em;
+  color: rgba(0, 0, 0, 0.06); pointer-events: none;
+  transition: color 0.6s var(--ease);
 }
-.life-quote {
-  grid-column: 1 / -1;
-  text-align: center;
-  padding: clamp(48px, 6vw, 96px) 0 0;
+.life-fig:hover .life-num,
+.life-fig:focus-within .life-num { color: rgba(0, 0, 0, 0.22); }
+
+.life-media {
+  position: relative; z-index: 1; display: block; overflow: hidden;
+  background: var(--slate); outline-offset: 3px;
 }
-.life-quote p {
-  font-family: var(--serif);
-  font-size: clamp(22px, 2.6vw, 38px);
-  line-height: 1.35;
-  max-width: 26em;
-  margin: 0 auto;
+.life-media:focus-visible { outline: 2px solid var(--slate); }
+.life-fallback { position: absolute; inset: 0; }
+.life-img {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: cover; display: block;
+  filter: saturate(0.72) brightness(1.02);
+  transform: scale(1.06);
+  transition: transform 1.2s var(--ease), filter 0.9s var(--ease);
 }
-.life-quote em { color: var(--slate); }
+.life-img.is-missing { opacity: 0; }
+.life-media::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(transparent 44%, rgba(0, 0, 0, 0.55));
+}
+
+/* directional clip-wipe entrance (rides the existing .reveal observer, but
+   overrides the base fade/translate so only the mask animates) */
+.life-media.life-wipe {
+  opacity: 1; transform: none;
+  clip-path: inset(0 100% 0 0);
+  transition: clip-path 1.2s var(--ease);
+  transition-delay: var(--d, 0ms);
+}
+.life-media.life-wipe--rtl { clip-path: inset(0 0 0 100%); }
+.life-media.life-wipe.in-view { clip-path: inset(0 0 0 0); }
+.life-media.life-wipe .life-img { transform: scale(1.06); }
+.life-media.life-wipe.in-view .life-img { transform: scale(1); }
+.life-fig:hover .life-wipe .life-img,
+.life-fig:focus-within .life-wipe .life-img {
+  transform: translateY(-8px) scale(1.015); filter: saturate(1);
+}
+
+.life-cap {
+  position: absolute; z-index: 2;
+  left: clamp(16px, 2vw, 28px); right: clamp(16px, 2vw, 28px);
+  bottom: clamp(16px, 2vw, 26px);
+}
+.life-meta {
+  display: block; font-family: var(--display);
+  font-size: 10.5px; letter-spacing: 0.24em; text-transform: uppercase;
+  color: var(--cream); margin-bottom: 9px;
+}
+.life-desc {
+  display: block; font-family: var(--body);
+  font-size: 13px; line-height: 1.5; color: rgba(255, 255, 255, 0.86);
+  max-width: 34ch;
+}
+
+/* tablet — asymmetric 2-up, gentler stagger */
+@media (max-width: 1023px) {
+  .life-fig--1 { grid-column: 1 / span 8; }
+  .life-fig--2 { grid-column: 9 / span 4; }
+  .life-fig--3 { grid-column: 1 / span 5; }
+  .life-fig--4 { grid-column: 6 / span 7; }
+  .life-fig { margin-top: calc(var(--offset, 0) / 2); }
+}
+/* mobile — single column, numerals tuck in, drift disabled */
+@media (max-width: 640px) {
+  .life-fig--1, .life-fig--2, .life-fig--3, .life-fig--4 { grid-column: 1 / -1; }
+  .life-fig { margin-top: 0; transform: none !important; }
+  .life-mosaic { row-gap: clamp(40px, 10vw, 64px); }
+  .life-num { font-size: clamp(56px, 16vw, 88px); top: -0.28em; }
+}
 
 /* ---------- reviews ---------- */
 
@@ -1171,6 +1239,10 @@ body.page-out { opacity: 0; transition: opacity 0.24s ease; }
 @media (prefers-reduced-motion: reduce) {
   .reveal { opacity: 1; transform: none; filter: none; transition: none; }
   .section-head.reveal .h-display, .reveal > .h-display { clip-path: none; transform: none; transition: none; }
+  .life-media.life-wipe, .life-media.life-wipe--rtl { clip-path: none !important; transition: none !important; opacity: 1 !important; }
+  .life-img { transform: none !important; filter: saturate(1) !important; transition: none !important; }
+  .life-fig { transform: none !important; }
+  .life-num { transition: none !important; }
   .hero-word .hl, .hero-render, .hero-col, .hero-baseline {
     animation: none !important; transform: none !important; opacity: 1 !important; filter: none !important;
   }
@@ -1243,9 +1315,6 @@ body.page-out { opacity: 0; transition: opacity 0.24s ease; }
   .pdp-media { position: relative; height: auto; min-height: 0; padding: clamp(40px, 8vw, 80px) var(--gutter); }
   .pdp-media img { max-height: 44vh; max-width: min(46%, 180px); }
   .pdp-info { padding-top: clamp(32px, 5vw, 72px); padding-left: var(--gutter); }
-  .life-a { grid-column: 1 / -1; }
-  .life-b { grid-column: 1 / span 7; }
-  .life-c { grid-column: 8 / span 5; }
   .price-grid { grid-template-columns: 1fr; }
   .footer-grid { grid-template-columns: 1fr 1fr; }
   .footer-brand { grid-column: 1 / -1; }

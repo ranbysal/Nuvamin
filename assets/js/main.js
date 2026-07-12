@@ -349,6 +349,55 @@
   window.nvWatchReveals = watchReveals;
   watchReveals();
 
+  /* ---------- "Inside the lab" mosaic drift ----------
+     A self-contained parallax loop for the homepage photo-mosaic. It is
+     deliberately NOT the site's [data-parallax] engine: on the homepage that
+     loop is gated by the hero and stops once the hero scrolls away — long
+     before this section appears — so the drift would be frozen. This one is
+     gated by its own observer on .life-mosaic and writes transform on the
+     .life-fig wrappers only (no collision with the clip-wipe or image scale).
+     Bails entirely under reduced-motion, coarse pointers, or narrow viewports. */
+  (function () {
+    var mosaic = document.querySelector(".life-mosaic");
+    if (!mosaic) return;
+    var figs = [].slice.call(mosaic.querySelectorAll("[data-drift]"));
+    if (!figs.length) return;
+    var reduceMq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    var hoverMq = window.matchMedia("(hover: hover)");
+    function allowed() {
+      return !reduceMq.matches && hoverMq.matches && window.innerWidth >= 640;
+    }
+    var running = false, rafId = 0;
+    function frame() {
+      var vh = window.innerHeight;
+      for (var i = 0; i < figs.length; i++) {
+        var el = figs[i];
+        var r = el.getBoundingClientRect();
+        var mid = r.top + r.height / 2 - vh / 2;
+        var amt = parseFloat(el.getAttribute("data-drift")) || 0.05;
+        el.style.transform = "translate3d(0," + (-mid * amt).toFixed(2) + "px,0)";
+      }
+      rafId = requestAnimationFrame(frame);
+    }
+    function start() { if (!running && allowed()) { running = true; rafId = requestAnimationFrame(frame); } }
+    function stop() {
+      running = false;
+      if (rafId) { cancelAnimationFrame(rafId); rafId = 0; }
+      figs.forEach(function (el) { el.style.transform = ""; });
+    }
+    if ("IntersectionObserver" in window) {
+      new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) { e.isIntersecting ? start() : stop(); });
+      }, { threshold: 0 }).observe(mosaic);
+    } else {
+      start();
+    }
+    window.addEventListener("resize", function () { allowed() ? start() : stop(); });
+    if (reduceMq.addEventListener) {
+      reduceMq.addEventListener("change", function () { if (!allowed()) stop(); });
+    }
+  })();
+
   /* ---------- accordions ---------- */
 
   document.addEventListener("click", function (e) {
