@@ -167,69 +167,108 @@
       </div>
       <a class="section-link" href="journal.html">Read the journal</a>
     </div>
-    <!-- Stage + index gallery. Photo slots are PLACEHOLDERS: drop the four
-         final photographs in as assets/img/lab/lab-01..04.webp (they layer
-         over the placeholder art automatically). All captions and index
-         titles are lorem filler — final copy to be supplied with the photos. -->
-    <div class="lab reveal" id="lab">
-      <div class="lab-stage" data-lab-stage>
-        <span class="lab-ghost" data-lab-ghost aria-hidden="true">01</span>
+  </div>
+    <!-- "Plate Series" — scroll-driven pinned photo sequence (GSAP ScrollTrigger).
+         DEFAULT markup/CSS render a static stacked editorial layout; the pin is
+         a progressive enhancement added by assets/js/lab-sequence.js.
+         Photo slots are PLACEHOLDERS: drop the four final photographs in as
+         assets/img/lab/lab-01..04.webp (they layer over the placeholder art
+         automatically). All captions are lorem filler — final copy TBD.
+         RULE: no .reveal / no data-parallax anywhere inside [data-seq]. -->
+    <div class="seq" data-seq>
+      <div class="wrap seq-grid">
+        <span class="seq-ghost" aria-hidden="true">0<span class="seq-ghost-win"><span class="seq-ghost-col" data-seq-digits><span>1</span><span>2</span><span>3</span><span>4</span></span></span></span>
 
-        <div class="lab-frames lab-wipe" data-lab-frames>
-          <figure class="lab-frame lab-frame--1 is-active" role="tabpanel" id="lab-panel-0" aria-labelledby="lab-tab-0">
-            <span class="lab-fallback" data-ph="Photo 01 &mdash; placeholder" aria-hidden="true"></span>
-            <img src="assets/img/lab/lab-01.webp" alt="Placeholder slot for photograph one" loading="lazy" decoding="async" onerror="this.classList.add('is-missing')">
+        <div class="seq-stage" data-seq-stage>
+          <figure class="seq-chapter" data-seq-chapter>
+            <div class="seq-mask" data-seq-mask>
+              <div class="seq-media" data-seq-media>
+                <span class="seq-art seq-art--1" data-ph="Photo 01 &mdash; placeholder" aria-hidden="true"></span>
+                <img src="assets/img/lab/lab-01.webp" alt="Placeholder slot for photograph one" decoding="async" onerror="this.classList.add('is-missing')">
+              </div>
+              <span class="seq-scrim" data-seq-scrim aria-hidden="true"></span>
+              <span class="seq-blade" data-seq-blade aria-hidden="true"></span>
+            </div>
+            <figcaption class="seq-cap" data-seq-cap>
+              <span class="seq-cap-rule" data-seq-rule aria-hidden="true"></span>
+              <p class="seq-cap-meta"><span class="mask"><span class="mline" data-seq-line>Fig. 01 &mdash; Lorem placeholder</span></span></p>
+              <p class="seq-cap-desc">
+                <span class="mask"><span class="mline" data-seq-line>Lorem ipsum dolor sit amet, consectetur</span></span>
+                <span class="mask"><span class="mline" data-seq-line>adipiscing elit, posuere erat a ante venenatis.</span></span>
+              </p>
+            </figcaption>
           </figure>
-          <figure class="lab-frame lab-frame--2" role="tabpanel" id="lab-panel-1" aria-labelledby="lab-tab-1" aria-hidden="true">
-            <span class="lab-fallback" data-ph="Photo 02 &mdash; placeholder" aria-hidden="true"></span>
-            <img src="assets/img/lab/lab-02.webp" alt="Placeholder slot for photograph two" loading="lazy" decoding="async" onerror="this.classList.add('is-missing')">
+
+          <figure class="seq-chapter" data-seq-chapter>
+            <div class="seq-mask" data-seq-mask>
+              <div class="seq-media" data-seq-media>
+                <span class="seq-art seq-art--2" data-ph="Photo 02 &mdash; placeholder" aria-hidden="true"></span>
+                <img src="assets/img/lab/lab-02.webp" alt="Placeholder slot for photograph two" decoding="async" onerror="this.classList.add('is-missing')">
+              </div>
+              <span class="seq-scrim" data-seq-scrim aria-hidden="true"></span>
+              <span class="seq-blade" data-seq-blade aria-hidden="true"></span>
+            </div>
+            <figcaption class="seq-cap" data-seq-cap>
+              <span class="seq-cap-rule" data-seq-rule aria-hidden="true"></span>
+              <p class="seq-cap-meta"><span class="mask"><span class="mline" data-seq-line>Fig. 02 &mdash; Lorem placeholder</span></span></p>
+              <p class="seq-cap-desc">
+                <span class="mask"><span class="mline" data-seq-line>Sed posuere consectetur est at lobortis,</span></span>
+                <span class="mask"><span class="mline" data-seq-line>donec ullamcorper nulla non metus auctor.</span></span>
+              </p>
+            </figcaption>
           </figure>
-          <figure class="lab-frame lab-frame--3" role="tabpanel" id="lab-panel-2" aria-labelledby="lab-tab-2" aria-hidden="true">
-            <span class="lab-fallback" data-ph="Photo 03 &mdash; placeholder" aria-hidden="true"></span>
-            <img src="assets/img/lab/lab-03.webp" alt="Placeholder slot for photograph three" loading="lazy" decoding="async" onerror="this.classList.add('is-missing')">
+
+          <figure class="seq-chapter" data-seq-chapter>
+            <div class="seq-mask" data-seq-mask>
+              <div class="seq-media" data-seq-media>
+                <span class="seq-art seq-art--3" data-ph="Photo 03 &mdash; placeholder" aria-hidden="true"></span>
+                <img src="assets/img/lab/lab-03.webp" alt="Placeholder slot for photograph three" decoding="async" onerror="this.classList.add('is-missing')">
+              </div>
+              <span class="seq-scrim" data-seq-scrim aria-hidden="true"></span>
+              <span class="seq-blade" data-seq-blade aria-hidden="true"></span>
+            </div>
+            <figcaption class="seq-cap" data-seq-cap>
+              <span class="seq-cap-rule" data-seq-rule aria-hidden="true"></span>
+              <p class="seq-cap-meta"><span class="mask"><span class="mline" data-seq-line>Fig. 03 &mdash; Lorem placeholder</span></span></p>
+              <p class="seq-cap-desc">
+                <span class="mask"><span class="mline" data-seq-line>Vestibulum id ligula porta felis euismod</span></span>
+                <span class="mask"><span class="mline" data-seq-line>semper, cras justo odio dapibus facilisis.</span></span>
+              </p>
+            </figcaption>
           </figure>
-          <figure class="lab-frame lab-frame--4" role="tabpanel" id="lab-panel-3" aria-labelledby="lab-tab-3" aria-hidden="true">
-            <span class="lab-fallback" data-ph="Photo 04 &mdash; placeholder" aria-hidden="true"></span>
-            <img src="assets/img/lab/lab-04.webp" alt="Placeholder slot for photograph four" loading="lazy" decoding="async" onerror="this.classList.add('is-missing')">
+
+          <figure class="seq-chapter" data-seq-chapter>
+            <div class="seq-mask" data-seq-mask>
+              <div class="seq-media" data-seq-media>
+                <span class="seq-art seq-art--4" data-ph="Photo 04 &mdash; placeholder" aria-hidden="true"></span>
+                <img src="assets/img/lab/lab-04.webp" alt="Placeholder slot for photograph four" decoding="async" onerror="this.classList.add('is-missing')">
+              </div>
+              <span class="seq-scrim" data-seq-scrim aria-hidden="true"></span>
+              <span class="seq-blade" data-seq-blade aria-hidden="true"></span>
+            </div>
+            <figcaption class="seq-cap" data-seq-cap>
+              <span class="seq-cap-rule" data-seq-rule aria-hidden="true"></span>
+              <p class="seq-cap-meta"><span class="mask"><span class="mline" data-seq-line>Fig. 04 &mdash; Lorem placeholder</span></span></p>
+              <p class="seq-cap-desc">
+                <span class="mask"><span class="mline" data-seq-line>Maecenas faucibus mollis interdum, aenean</span></span>
+                <span class="mask"><span class="mline" data-seq-line>lacinia bibendum nulla sed consectetur.</span></span>
+              </p>
+            </figcaption>
           </figure>
         </div>
 
-        <div class="lab-caption" data-lab-caption aria-live="polite">
-          <span class="lab-caption-meta" data-lab-meta>Caption 01 &mdash; placeholder</span>
-          <span class="lab-caption-desc" data-lab-desc>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer posuere erat a ante venenatis dapibus posuere velit.</span>
+        <div class="seq-rail" aria-hidden="true" data-seq-rail>
+          <span class="seq-rail-track" data-seq-track>
+            <span class="seq-rail-thumb" data-seq-thumb></span>
+            <i class="seq-rail-tick" data-seq-tick></i>
+            <i class="seq-rail-tick" data-seq-tick></i>
+            <i class="seq-rail-tick" data-seq-tick></i>
+            <i class="seq-rail-tick" data-seq-tick></i>
+          </span>
+          <span class="seq-rail-count"><span class="seq-count-win"><span class="seq-count-col" data-seq-count><span>01</span><span>02</span><span>03</span><span>04</span></span></span>&thinsp;/&thinsp;04</span>
         </div>
-
-        <div class="lab-progress" aria-hidden="true"><span class="lab-progress-bar" data-lab-progress></span></div>
-      </div>
-
-      <div class="lab-index" role="tablist" aria-label="Inside the lab" data-lab-tabs>
-        <button class="lab-tab is-active" role="tab" id="lab-tab-0" aria-controls="lab-panel-0" aria-selected="true" tabindex="0" data-i="0" style="--i:0"
-          data-meta="Caption 01 &mdash; placeholder"
-          data-desc="Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer posuere erat a ante venenatis dapibus posuere velit.">
-          <span class="lab-tab-n">01</span>
-          <span class="lab-tab-body"><span class="lab-tab-t">Lorem ipsum dolor</span><span class="lab-tab-s">Placeholder line one</span></span>
-        </button>
-        <button class="lab-tab" role="tab" id="lab-tab-1" aria-controls="lab-panel-1" aria-selected="false" tabindex="-1" data-i="1" style="--i:1"
-          data-meta="Caption 02 &mdash; placeholder"
-          data-desc="Sed posuere consectetur est at lobortis. Donec ullamcorper nulla non metus auctor fringilla sed odio dui.">
-          <span class="lab-tab-n">02</span>
-          <span class="lab-tab-body"><span class="lab-tab-t">Consectetur adipiscing</span><span class="lab-tab-s">Placeholder line two</span></span>
-        </button>
-        <button class="lab-tab" role="tab" id="lab-tab-2" aria-controls="lab-panel-2" aria-selected="false" tabindex="-1" data-i="2" style="--i:2"
-          data-meta="Caption 03 &mdash; placeholder"
-          data-desc="Vestibulum id ligula porta felis euismod semper. Cras justo odio, dapibus ac facilisis in, egestas eget quam.">
-          <span class="lab-tab-n">03</span>
-          <span class="lab-tab-body"><span class="lab-tab-t">Sed do eiusmod</span><span class="lab-tab-s">Placeholder line three</span></span>
-        </button>
-        <button class="lab-tab" role="tab" id="lab-tab-3" aria-controls="lab-panel-3" aria-selected="false" tabindex="-1" data-i="3" style="--i:3"
-          data-meta="Caption 04 &mdash; placeholder"
-          data-desc="Maecenas faucibus mollis interdum. Aenean lacinia bibendum nulla sed consectetur et posuere erat ante.">
-          <span class="lab-tab-n">04</span>
-          <span class="lab-tab-body"><span class="lab-tab-t">Ut enim ad minima</span><span class="lab-tab-s">Placeholder line four</span></span>
-        </button>
       </div>
     </div>
-  </div>
 </section>
 
 <!-- ============ CONTROL AT EVERY STEP ============ -->
@@ -299,5 +338,8 @@
     nvWatchReveals();
   })();
 </script>
+<script defer src="assets/js/vendor/gsap.min.js"></script>
+<script defer src="assets/js/vendor/ScrollTrigger.min.js"></script>
+<script defer src="assets/js/lab-sequence.js"></script>
 </body>
 </html>

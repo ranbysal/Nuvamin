@@ -505,102 +505,67 @@ body.hero-go .hero-baseline { animation: heroFadeUp 1.05s 1.4s var(--ease) forwa
 .ing-item .ing-tag { font-family: var(--serif); font-style: italic; font-size: 14px; color: var(--slate); display: block; margin-top: 4px; }
 .ing-item p { font-size: 14px; color: var(--ink-60); }
 
-/* ---------- inside the lab: stage + index gallery ---------- */
+/* ---------- inside the lab: "plate series" scroll sequence ---------- */
 
-.life { background: var(--mist); overflow: clip; }
+.life { background: var(--mist); }
 
-/* One cinematic frame (the stage) + a numbered index rail. Switching a tab
-   crossfades the frame, re-animates the outlined ghost numeral, and swaps
-   the caption; an auto-advance ticks through the four slides with a hairline
-   progress bar. Transform owners never collide: scroll drift on .lab-ghost /
-   .lab-stage, entrance wipe (clip-path) on .lab-frames, settle scale on the
-   frame media. */
-.lab {
-  display: grid;
-  grid-template-columns: repeat(12, 1fr);
-  column-gap: var(--gutter);
-  align-items: end;
-  margin-top: clamp(52px, 7vw, 110px);
-}
-.lab-stage { grid-column: 1 / span 8; position: relative; }
-.lab-index { grid-column: 9 / span 4; display: flex; flex-direction: column; }
+/* DEFAULT (no JS / reduced motion / GSAP failed): a static stacked editorial
+   sequence — four framed plates with visible captions. The pinned, scrubbed
+   mode is applied by assets/js/lab-sequence.js, which adds .lab-enhanced to
+   <html>; ALL enhanced-mode layout lives under that class, and GSAP owns
+   every transform/clip/opacity inline. No .reveal / data-parallax in here.
+   Placeholder art (.seq-art--1..4) is the "asset slot" until the client's
+   photographs land at assets/img/lab/lab-01..04.webp. */
 
-/* outlined ghost numeral, straddling the frame's top edge */
-.lab-ghost {
-  position: absolute; top: 0; left: -0.04em; z-index: 2;
-  transform: translate3d(0, -56%, 0);
-  font-family: var(--display); font-weight: 600; line-height: 1;
-  font-size: clamp(96px, 12vw, 210px); letter-spacing: -0.03em;
-  color: rgba(0, 0, 0, 0.05);
-  -webkit-text-stroke: 1px rgba(0, 0, 0, 0.28);
-  pointer-events: none; user-select: none;
-}
-/* keyframes intentionally never drop fully invisible: if an environment
-   fails to play them, the worst case is a softer ghost — never a blank */
-.lab-ghost.is-tick { animation: labGhostIn 0.8s var(--ease); }
-@keyframes labGhostIn {
-  from { opacity: 0.25; letter-spacing: 0.1em; }
-  to   { opacity: 1; letter-spacing: -0.03em; }
-}
+.seq { margin-top: clamp(40px, 6vh, 72px); }
+.seq-grid { position: relative; }
 
-/* the stage frame */
-.lab-frames {
-  position: relative; z-index: 1;
-  aspect-ratio: 16 / 10; overflow: hidden;
-  background: var(--slate);
+.seq-chapter { margin: 0 0 clamp(56px, 9vh, 104px); }
+.seq-chapter:last-child { margin-bottom: 0; }
+
+.seq-mask {
+  position: relative; overflow: hidden;
+  aspect-ratio: 16 / 10; background: var(--slate);
 }
-.lab-frames::after {
-  content: ""; position: absolute; inset: 0; z-index: 2; pointer-events: none;
-  background: linear-gradient(transparent 52%, rgba(0, 0, 0, 0.52));
+.seq-mask::after {
+  content: ""; position: absolute; inset: 0; z-index: 3; pointer-events: none;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.14);
 }
-.lab-frame {
-  position: absolute; inset: 0; margin: 0;
-  opacity: 0; visibility: hidden;
-  transition: opacity 1s var(--ease), visibility 0s 1s;
-}
-.lab-frame.is-active {
-  opacity: 1; visibility: visible;
-  transition: opacity 1s var(--ease);
-}
-.lab-frame img {
+.seq-media { position: absolute; inset: 0; }
+.seq-media img {
   position: absolute; inset: 0; width: 100%; height: 100%;
   object-fit: cover; display: block;
 }
-.lab-frame img.is-missing { opacity: 0; }
-/* museum-slow settle each time a frame becomes active */
-.lab-frame.is-active img,
-.lab-frame.is-active .lab-fallback { animation: labSettle 9s var(--ease) both; }
-@keyframes labSettle { from { transform: scale(1.05); } to { transform: scale(1); } }
+.seq-media img.is-missing { display: none; }
 
-/* placeholder art — an "asset slot" until the real photographs are dropped
-   in as assets/img/lab/lab-01..04.webp (the img then covers this layer) */
-.lab-fallback { position: absolute; inset: 0; display: grid; place-items: center; }
-.lab-frame--1 .lab-fallback {
+/* placeholder "asset slot" art */
+.seq-art { position: absolute; inset: 0; display: grid; place-items: center; }
+.seq-art--1 {
   background:
     radial-gradient(110% 90% at 80% 8%, rgba(120, 144, 156, 0.5), transparent 58%),
     linear-gradient(158deg, #232d32 0%, #06080a 100%);
 }
-.lab-frame--2 .lab-fallback {
+.seq-art--2 {
   background:
     radial-gradient(70% 110% at 12% 88%, rgba(236, 239, 241, 0.22), transparent 55%),
     linear-gradient(200deg, #55676f 0%, #2c383e 100%);
 }
-.lab-frame--3 .lab-fallback {
+.seq-art--3 {
   background:
     repeating-linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0 1px, transparent 1px 56px),
     radial-gradient(90% 80% at 70% 30%, rgba(69, 90, 100, 0.65), transparent 70%),
     linear-gradient(170deg, #78909C 0%, #3c4b53 100%);
 }
-.lab-frame--4 .lab-fallback {
+.seq-art--4 {
   background:
     radial-gradient(120% 100% at 30% 0%, rgba(120, 144, 156, 0.38), transparent 62%),
     linear-gradient(196deg, #46565e 0%, #10171a 88%);
 }
-.lab-fallback::before {
+.seq-art::before {
   content: ""; position: absolute; inset: clamp(14px, 2vw, 22px);
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
-.lab-fallback::after {
+.seq-art::after {
   content: attr(data-ph);
   font-family: var(--display); font-size: 10.5px;
   letter-spacing: 0.3em; text-transform: uppercase;
@@ -608,93 +573,122 @@ body.hero-go .hero-baseline { animation: heroFadeUp 1.05s 1.4s var(--ease) forwa
   text-shadow: 0 1px 12px rgba(0, 0, 0, 0.4);
 }
 
-/* caption plate over the frame's lower gradient */
-.lab-caption {
-  position: absolute; z-index: 3;
-  left: clamp(18px, 2.4vw, 32px); right: clamp(18px, 2.4vw, 32px);
-  bottom: clamp(18px, 2.4vw, 30px);
+/* GSAP-only layers — inert in the static default */
+.seq-scrim { position: absolute; inset: 0; z-index: 1; background: var(--slate); opacity: 0; pointer-events: none; }
+.seq-blade { position: absolute; left: 0; right: 0; top: 0; height: 1px; z-index: 2; background: var(--ink); opacity: 0; pointer-events: none; }
+
+/* captions — line-mask rows (fully visible by default) */
+.seq-cap { margin: 16px 0 0; max-width: 56ch; }
+.seq-cap .mask { display: block; overflow: hidden; }
+.seq-cap .mline { display: block; }
+.seq-cap-rule {
+  display: block; width: 32px; height: 1px;
+  background: var(--ink); margin-bottom: 10px;
+  transform-origin: left center;
 }
-.lab-caption.is-tick { animation: labCapIn 0.7s var(--ease); }
-@keyframes labCapIn {
-  from { opacity: 0.3; transform: translateY(12px); }
-  to   { opacity: 1; transform: none; }
+.seq-cap-meta {
+  font-family: var(--display); font-size: 11px;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--ink-60); margin: 0 0 6px;
 }
-.lab-caption-meta {
-  display: block; font-family: var(--display);
-  font-size: 10.5px; letter-spacing: 0.24em; text-transform: uppercase;
-  color: var(--cream); margin-bottom: 9px;
-}
-.lab-caption-desc {
-  display: block; font-family: var(--body);
-  font-size: 13.5px; line-height: 1.55;
-  color: rgba(255, 255, 255, 0.88); max-width: 44ch;
+.seq-cap-desc {
+  font-family: var(--body); font-size: 13.5px; line-height: 1.6;
+  color: var(--ink-60); margin: 0;
 }
 
-/* auto-advance hairline */
-.lab-progress { height: 2px; margin-top: 16px; background: var(--line-soft); }
-.lab-progress-bar { display: block; height: 100%; width: 0; background: var(--ink); }
+/* ghost numeral + progress rail exist only in the enhanced mode */
+.seq-ghost, .seq-rail { display: none; }
 
-/* the index rail */
-.lab-tab {
-  display: grid; grid-template-columns: auto 1fr; gap: 18px; align-items: baseline;
-  width: 100%; padding: clamp(16px, 1.7vw, 24px) 4px;
-  border: 0; border-top: 1px solid var(--line);
-  background: none; text-align: left; cursor: pointer;
-  position: relative; font: inherit; color: inherit;
-}
-.lab-tab:last-child { border-bottom: 1px solid var(--line); }
-.lab-tab::after {
-  content: ""; position: absolute; left: 0; top: -1px;
-  height: 1px; width: 0; background: var(--ink);
-  transition: width 0.8s var(--ease);
-}
-.lab-tab.is-active::after, .lab-tab:hover::after { width: 100%; }
-.lab-tab:focus-visible { outline: 2px solid var(--slate); outline-offset: 2px; }
-.lab-tab-n {
-  font-family: var(--display); font-size: 11px; letter-spacing: 0.18em;
-  color: var(--ink-40); transition: color 0.4s var(--ease);
-}
-.lab-tab-t {
-  display: block; font-family: var(--display);
-  font-size: clamp(14px, 1.25vw, 17px); font-weight: 500;
-  letter-spacing: 0.06em; text-transform: uppercase;
-  color: var(--ink-60);
-  transition: color 0.4s var(--ease), transform 0.6s var(--ease);
-}
-.lab-tab-s {
-  display: block; margin-top: 5px;
-  font-family: var(--body); font-size: 12.5px; color: var(--ink-40);
-}
-.lab-tab.is-active .lab-tab-n, .lab-tab:hover .lab-tab-n { color: var(--ink); }
-.lab-tab.is-active .lab-tab-t, .lab-tab:hover .lab-tab-t { color: var(--ink); transform: translateX(6px); }
+/* ============ ENHANCED (pinned) MODE — html.lab-enhanced ============ */
 
-/* entrance choreography: frame wipes open, ghost rises, index cascades */
-.lab.reveal { transform: none; }
-.lab-wipe { clip-path: inset(0 100% 0 0); transition: clip-path 1.3s var(--ease) 0.1s; }
-.lab.in-view .lab-wipe { clip-path: inset(0 0 0 0); }
-.lab .lab-ghost { opacity: 0; transform: translate3d(0, -36%, 0); transition: opacity 0.9s var(--ease) 0.5s, transform 0.9s var(--ease) 0.5s; }
-.lab.in-view .lab-ghost { opacity: 1; transform: translate3d(0, -56%, 0); }
-.lab .lab-tab { opacity: 0; transform: translateY(22px); transition: opacity 0.9s var(--ease), transform 0.9s var(--ease); transition-delay: calc(0.35s + var(--i, 0) * 110ms); }
-.lab.in-view .lab-tab { opacity: 1; transform: none; }
-.lab .lab-caption { opacity: 0; transition: opacity 0.9s var(--ease) 0.9s; }
-.lab.in-view .lab-caption { opacity: 1; }
-
-/* tablet — stage full width, index becomes a row beneath */
-@media (max-width: 1023px) {
-  .lab-stage, .lab-index { grid-column: 1 / -1; }
-  .lab-index { flex-direction: row; margin-top: 30px; }
-  .lab-tab { flex: 1; grid-template-columns: 1fr; gap: 8px; padding: 16px 10px 4px 0; }
-  .lab-tab:last-child { border-bottom: 0; }
-  .lab-tab-s { display: none; }
+html.lab-enhanced .life {
+  padding: 0;
+  height: 100vh;   /* fallback */
+  height: 100svh;  /* stable small-viewport unit where supported */
+  display: flex; flex-direction: column;
+  overflow: hidden;
 }
-/* mobile — index stacks back to rows */
-@media (max-width: 640px) {
-  .lab-index { flex-direction: column; margin-top: 24px; }
-  .lab-tab { grid-template-columns: auto 1fr; gap: 14px; padding: 15px 4px; }
-  .lab-tab:last-child { border-bottom: 1px solid var(--line); }
-  .lab-tab-s { display: block; }
-  .lab-ghost { font-size: clamp(72px, 19vw, 110px); }
-  .lab-caption-desc { font-size: 12.5px; }
+/* .wrap carries margin-inline auto; in a flex column that would shrink it
+   to fit-content — force full width so the head keeps its left alignment */
+html.lab-enhanced .life > .wrap:first-child { width: 100%; padding-top: 86px; }
+html.lab-enhanced .life .section-head { margin-bottom: clamp(14px, 2.5vh, 28px); }
+html.lab-enhanced .seq { flex: 1; min-height: 0; margin: 0; display: flex; }
+html.lab-enhanced .seq-grid {
+  flex: 1; min-height: 0; width: 100%;
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  grid-template-rows: 1fr clamp(96px, 15vh, 132px);
+  column-gap: var(--gutter);
+}
+html.lab-enhanced .seq-stage {
+  grid-column: 1 / span 9; grid-row: 1;
+  position: relative; min-height: 0;
+  margin-top: clamp(6px, 1.5vh, 18px);
+}
+html.lab-enhanced .seq-chapter { position: absolute; inset: 0; margin: 0; }
+html.lab-enhanced .seq-mask { position: absolute; inset: 0; aspect-ratio: auto; }
+html.lab-enhanced .seq-media { inset: -7% 0; }
+html.lab-enhanced .seq-cap {
+  position: absolute; top: calc(100% + 18px); left: 0;
+  width: min(56ch, 92%); margin: 0;
+}
+html.lab-enhanced .seq-ghost {
+  display: block; position: absolute; z-index: 3;
+  top: -0.14em; right: calc(16.666% + var(--gutter) * 0.5);
+  font-family: var(--display); font-weight: 500; line-height: 1;
+  font-size: clamp(140px, 18vw, 280px); letter-spacing: 0;
+  color: transparent;
+  -webkit-text-stroke: 1px rgba(0, 0, 0, 0.16);
+  mix-blend-mode: multiply;
+  pointer-events: none; user-select: none;
+}
+@supports not (-webkit-text-stroke: 1px black) {
+  html.lab-enhanced .seq-ghost { color: rgba(0, 0, 0, 0.07); }
+}
+html.lab-enhanced .seq-ghost-win {
+  display: inline-block; overflow: hidden;
+  height: 1em; width: 0.62em; vertical-align: top;
+}
+html.lab-enhanced .seq-ghost-col { display: block; }
+html.lab-enhanced .seq-ghost-col > span { display: block; height: 1em; line-height: 1; }
+
+html.lab-enhanced .seq-rail {
+  display: flex; flex-direction: column; align-items: center; gap: 14px;
+  grid-column: 12; grid-row: 1 / span 2;
+  justify-self: end; align-self: center; z-index: 4;
+}
+html.lab-enhanced .seq-rail-track {
+  position: relative; width: 1px; height: 180px;
+  background: var(--line); transform-origin: top center;
+}
+html.lab-enhanced .seq-rail-thumb {
+  position: absolute; top: 0; left: 0;
+  width: 1px; height: 28px; background: var(--ink);
+}
+html.lab-enhanced .seq-rail-tick {
+  position: absolute; left: -2px; width: 5px; height: 1px;
+  background: var(--ink-40); transition: background 0.4s var(--ease), transform 0.4s var(--ease);
+}
+html.lab-enhanced .seq-rail-tick:nth-of-type(1) { top: 5%; }
+html.lab-enhanced .seq-rail-tick:nth-of-type(2) { top: 36%; }
+html.lab-enhanced .seq-rail-tick:nth-of-type(3) { top: 68%; }
+html.lab-enhanced .seq-rail-tick:nth-of-type(4) { top: 97%; }
+html.lab-enhanced .seq-rail-tick.is-here { background: var(--ink); transform: scaleX(1.8); }
+html.lab-enhanced .seq-rail-count {
+  font-family: var(--display); font-size: 10px;
+  letter-spacing: 0.12em; color: var(--ink-60);
+  display: inline-flex; align-items: baseline;
+}
+html.lab-enhanced .seq-count-win {
+  display: inline-block; overflow: hidden; height: 1.2em; vertical-align: top;
+}
+html.lab-enhanced .seq-count-col { display: block; }
+html.lab-enhanced .seq-count-col > span { display: block; height: 1.2em; line-height: 1.2; }
+
+/* narrower stage columns on mid viewports */
+@media (max-width: 1100px) {
+  html.lab-enhanced .seq-stage { grid-column: 1 / span 10; }
+  html.lab-enhanced .seq-ghost { right: calc(8.333% + var(--gutter) * 0.5); }
 }
 
 /* ---------- reviews ---------- */
@@ -1324,14 +1318,8 @@ body.page-out { opacity: 0; transition: opacity 0.24s ease; }
 @media (prefers-reduced-motion: reduce) {
   .reveal { opacity: 1; transform: none; filter: none; transition: none; }
   .section-head.reveal .h-display, .reveal > .h-display { clip-path: none; transform: none; transition: none; }
-  .lab-wipe { clip-path: none !important; transition: none !important; }
-  .lab-frame, .lab-frame img, .lab-fallback, .lab-caption, .lab-ghost, .lab-tab {
-    animation: none !important; transition: none !important;
-  }
-  .lab .lab-ghost, .lab.in-view .lab-ghost { opacity: 1; transform: translate3d(0, -56%, 0) !important; }
-  .lab .lab-tab, .lab .lab-caption { opacity: 1; transform: none; }
-  .lab-stage { transform: none !important; }
-  .lab-progress { display: none !important; }
+  /* .seq needs no overrides: reduced-motion never enters the enhanced mode
+     (gsap.matchMedia gate), so the static stacked default simply renders. */
   .hero-word .hl, .hero-render, .hero-col, .hero-baseline {
     animation: none !important; transform: none !important; opacity: 1 !important; filter: none !important;
   }
