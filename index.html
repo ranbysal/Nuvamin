@@ -167,58 +167,67 @@
       </div>
       <a class="section-link" href="journal.html">Read the journal</a>
     </div>
-    <div class="life-mosaic">
-      <span class="life-rule reveal" aria-hidden="true"></span>
+    <!-- Stage + index gallery. Photo slots are PLACEHOLDERS: drop the four
+         final photographs in as assets/img/lab/lab-01..04.webp (they layer
+         over the placeholder art automatically). All captions and index
+         titles are lorem filler — final copy to be supplied with the photos. -->
+    <div class="lab reveal" id="lab">
+      <div class="lab-stage" data-lab-stage>
+        <span class="lab-ghost" data-lab-ghost aria-hidden="true">01</span>
 
-      <figure class="life-fig life-fig--1" data-drift="0.03" style="--offset:0">
-        <span class="life-num reveal" aria-hidden="true" style="--d:0ms">01</span>
-        <a class="life-media life-wipe reveal" href="journal.html" style="--d:90ms" aria-label="Read the journal — inside the analytical suite">
-          <span class="life-fallback" style="background:var(--ink)"></span>
-          <img class="life-img" src="assets/img/lab/lab-02.webp" alt="A glass-walled analytical laboratory with researchers working at instrument benches" loading="lazy" decoding="async" onerror="this.classList.add('is-missing')">
-        </a>
-        <figcaption class="life-cap reveal" style="--d:180ms">
-          <span class="life-meta">The analytical suite</span>
-          <span class="life-desc">Instrument benches under controlled light. Research materials &mdash; not for human or veterinary use.</span>
-        </figcaption>
-      </figure>
+        <div class="lab-frames lab-wipe" data-lab-frames>
+          <figure class="lab-frame lab-frame--1 is-active" role="tabpanel" id="lab-panel-0" aria-labelledby="lab-tab-0">
+            <span class="lab-fallback" data-ph="Photo 01 &mdash; placeholder" aria-hidden="true"></span>
+            <img src="assets/img/lab/lab-01.webp" alt="Placeholder slot for photograph one" loading="lazy" decoding="async" onerror="this.classList.add('is-missing')">
+          </figure>
+          <figure class="lab-frame lab-frame--2" role="tabpanel" id="lab-panel-1" aria-labelledby="lab-tab-1" aria-hidden="true">
+            <span class="lab-fallback" data-ph="Photo 02 &mdash; placeholder" aria-hidden="true"></span>
+            <img src="assets/img/lab/lab-02.webp" alt="Placeholder slot for photograph two" loading="lazy" decoding="async" onerror="this.classList.add('is-missing')">
+          </figure>
+          <figure class="lab-frame lab-frame--3" role="tabpanel" id="lab-panel-2" aria-labelledby="lab-tab-2" aria-hidden="true">
+            <span class="lab-fallback" data-ph="Photo 03 &mdash; placeholder" aria-hidden="true"></span>
+            <img src="assets/img/lab/lab-03.webp" alt="Placeholder slot for photograph three" loading="lazy" decoding="async" onerror="this.classList.add('is-missing')">
+          </figure>
+          <figure class="lab-frame lab-frame--4" role="tabpanel" id="lab-panel-3" aria-labelledby="lab-tab-3" aria-hidden="true">
+            <span class="lab-fallback" data-ph="Photo 04 &mdash; placeholder" aria-hidden="true"></span>
+            <img src="assets/img/lab/lab-04.webp" alt="Placeholder slot for photograph four" loading="lazy" decoding="async" onerror="this.classList.add('is-missing')">
+          </figure>
+        </div>
 
-      <figure class="life-fig life-fig--2" data-drift="0.08" style="--offset:clamp(64px,9vw,140px)">
-        <span class="life-num reveal" aria-hidden="true" style="--d:0ms">02</span>
-        <a class="life-media life-wipe life-wipe--rtl reveal" href="journal.html" style="--d:90ms" aria-label="Read the journal — vial selection at the QC tray">
-          <span class="life-fallback" style="background:var(--slate)"></span>
-          <img class="life-img" src="assets/img/lab/lab-01.webp" alt="A gloved hand selecting a capped glass vial from a stainless tray engraved Nuvamin" loading="lazy" decoding="async" onerror="this.classList.add('is-missing')">
-        </a>
-        <figcaption class="life-cap reveal" style="--d:180ms">
-          <span class="life-meta">QC tray &middot; lot NV-0426</span>
-          <span class="life-desc">Vial selection &mdash; visual and seal inspection. Research use only.</span>
-        </figcaption>
-      </figure>
+        <div class="lab-caption" data-lab-caption aria-live="polite">
+          <span class="lab-caption-meta" data-lab-meta>Caption 01 &mdash; placeholder</span>
+          <span class="lab-caption-desc" data-lab-desc>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer posuere erat a ante venenatis dapibus posuere velit.</span>
+        </div>
 
-      <figure class="life-fig life-fig--3" data-drift="0.05" style="--offset:clamp(24px,3vw,56px)">
-        <span class="life-num reveal" aria-hidden="true" style="--d:0ms">03</span>
-        <a class="life-media life-wipe reveal" href="journal.html" style="--d:90ms" aria-label="Read the journal — reversed-phase HPLC">
-          <span class="life-fallback" style="background:var(--blue)"></span>
-          <img class="life-img" src="assets/img/lab/lab-03.webp" alt="A stack of HPLC analytical instruments beside a monitor showing a chromatogram" loading="lazy" decoding="async" onerror="this.classList.add('is-missing')">
-        </a>
-        <figcaption class="life-cap reveal" style="--d:180ms">
-          <span class="life-meta">Reversed-phase HPLC</span>
-          <span class="life-desc">Identity and purity, read straight from the chromatogram. Research use only.</span>
-        </figcaption>
-      </figure>
+        <div class="lab-progress" aria-hidden="true"><span class="lab-progress-bar" data-lab-progress></span></div>
+      </div>
 
-      <figure class="life-fig life-fig--4" data-drift="0.10" style="--offset:clamp(80px,11vw,180px)">
-        <span class="life-num reveal" aria-hidden="true" style="--d:0ms">04</span>
-        <a class="life-media life-wipe life-wipe--rtl reveal" href="journal.html" style="--d:90ms" aria-label="Read the journal — pipetting reference standards">
-          <span class="life-fallback" style="background:var(--slate)"></span>
-          <img class="life-img" src="assets/img/lab/lab-04.webp" alt="A scientist in safety glasses and gloves pipetting into vials at a laboratory bench" loading="lazy" decoding="async" onerror="this.classList.add('is-missing')">
-        </a>
-        <figcaption class="life-cap reveal" style="--d:180ms">
-          <span class="life-meta">Reference standards</span>
-          <span class="life-desc">Pipetted at the bench &mdash; measured, logged, filed. Research use only.</span>
-        </figcaption>
-      </figure>
-
-      <span class="life-rule reveal" aria-hidden="true"></span>
+      <div class="lab-index" role="tablist" aria-label="Inside the lab" data-lab-tabs>
+        <button class="lab-tab is-active" role="tab" id="lab-tab-0" aria-controls="lab-panel-0" aria-selected="true" tabindex="0" data-i="0" style="--i:0"
+          data-meta="Caption 01 &mdash; placeholder"
+          data-desc="Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer posuere erat a ante venenatis dapibus posuere velit.">
+          <span class="lab-tab-n">01</span>
+          <span class="lab-tab-body"><span class="lab-tab-t">Lorem ipsum dolor</span><span class="lab-tab-s">Placeholder line one</span></span>
+        </button>
+        <button class="lab-tab" role="tab" id="lab-tab-1" aria-controls="lab-panel-1" aria-selected="false" tabindex="-1" data-i="1" style="--i:1"
+          data-meta="Caption 02 &mdash; placeholder"
+          data-desc="Sed posuere consectetur est at lobortis. Donec ullamcorper nulla non metus auctor fringilla sed odio dui.">
+          <span class="lab-tab-n">02</span>
+          <span class="lab-tab-body"><span class="lab-tab-t">Consectetur adipiscing</span><span class="lab-tab-s">Placeholder line two</span></span>
+        </button>
+        <button class="lab-tab" role="tab" id="lab-tab-2" aria-controls="lab-panel-2" aria-selected="false" tabindex="-1" data-i="2" style="--i:2"
+          data-meta="Caption 03 &mdash; placeholder"
+          data-desc="Vestibulum id ligula porta felis euismod semper. Cras justo odio, dapibus ac facilisis in, egestas eget quam.">
+          <span class="lab-tab-n">03</span>
+          <span class="lab-tab-body"><span class="lab-tab-t">Sed do eiusmod</span><span class="lab-tab-s">Placeholder line three</span></span>
+        </button>
+        <button class="lab-tab" role="tab" id="lab-tab-3" aria-controls="lab-panel-3" aria-selected="false" tabindex="-1" data-i="3" style="--i:3"
+          data-meta="Caption 04 &mdash; placeholder"
+          data-desc="Maecenas faucibus mollis interdum. Aenean lacinia bibendum nulla sed consectetur et posuere erat ante.">
+          <span class="lab-tab-n">04</span>
+          <span class="lab-tab-body"><span class="lab-tab-t">Ut enim ad minima</span><span class="lab-tab-s">Placeholder line four</span></span>
+        </button>
+      </div>
     </div>
   </div>
 </section>
