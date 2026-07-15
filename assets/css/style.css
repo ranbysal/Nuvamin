@@ -1148,31 +1148,6 @@ html.nv-gate-open { overflow: hidden; }
 .founder-note blockquote { font-family: var(--serif); font-size: clamp(20px, 2.2vw, 30px); line-height: 1.45; }
 .founder-note cite { display: block; margin-top: 28px; font-family: var(--display); font-style: normal; font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink-60); }
 
-/* ---------- journal ---------- */
-
-.journal-list { border-top: 1px solid var(--line); }
-.journal-row {
-  display: grid;
-  grid-template-columns: 110px 1fr auto;
-  gap: clamp(20px, 3vw, 56px);
-  align-items: baseline;
-  padding: clamp(26px, 3vw, 44px) 0;
-  border-bottom: 1px solid var(--line);
-  transition: padding-left 0.45s var(--ease), background 0.45s;
-}
-.journal-row:hover { padding-left: 16px; }
-.journal-row .jr-num { font-family: var(--serif); font-style: italic; color: var(--slate); }
-.journal-row h2 { font-family: var(--display); font-size: clamp(20px, 2.4vw, 34px); font-weight: 500; letter-spacing: 0.01em; text-transform: uppercase; }
-.journal-row p { color: var(--ink-60); font-size: 14px; margin-top: 8px; max-width: 68ch; }
-.journal-row .jr-meta { font-family: var(--display); font-size: 10.5px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-40); white-space: nowrap; }
-.article { max-width: 720px; margin: 0 auto; padding: clamp(48px, 6vw, 96px) 0; }
-.article + .article { border-top: 1px solid var(--line); }
-.article .kicker { margin-bottom: 18px; }
-.article h2 { font-family: var(--display); font-size: clamp(26px, 3vw, 44px); font-weight: 500; text-transform: uppercase; letter-spacing: -0.01em; line-height: 1.05; margin-bottom: 24px; }
-.article p { margin-bottom: 18px; color: var(--ink-60); font-size: 15.5px; line-height: 1.8; }
-.article p strong { color: var(--ink); }
-.article .drop::first-letter { font-family: var(--serif); font-size: 3.2em; float: left; line-height: 0.85; padding: 4px 10px 0 0; color: var(--slate); }
-
 /* ---------- contact ---------- */
 
 .contact-layout { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(40px, 6vw, 110px); align-items: start; }
@@ -1402,7 +1377,6 @@ body.page-out { opacity: 0; transition: opacity 0.24s ease; }
   .why-grid { grid-template-columns: 1fr; }
   .ing-item { grid-template-columns: 52px 1fr; }
   .ing-item p { grid-column: 2; }
-  .journal-row { grid-template-columns: 1fr; gap: 8px; }
   .std-row { grid-template-columns: 1fr; gap: 10px; }
   .std-row .n { font-size: 13px; }
   .cart-line { grid-template-columns: 72px 1fr; row-gap: 10px; }

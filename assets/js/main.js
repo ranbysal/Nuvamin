@@ -17,7 +17,6 @@
     '<nav class="nav nav-left">' +
     navLink("shop.html", "Shop", "shop") +
     navLink("about.html", "About", "about") +
-    navLink("journal.html", "Journal", "journal") +
     "</nav>" +
     '<a class="brand" href="index.html">Nuvamin</a>' +
     '<nav class="nav nav-right">' +
@@ -32,7 +31,6 @@
     "<p>Research-grade peptides, independently verified lot by lot. Identity by mass spectrometry, purity by HPLC, certificates published for every batch.</p></div>" +
     '<div><h4 class="footer-h">Company</h4><ul>' +
     '<li><a href="about.html">About</a></li>' +
-    '<li><a href="journal.html">Journal</a></li>' +
     '<li><a href="contact.html">Contact</a></li>' +
     "</ul></div>" +
     '<div><h4 class="footer-h">Support</h4><ul>' +

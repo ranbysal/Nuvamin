@@ -26,7 +26,6 @@ lifecycle, and Stripe go-live checklist.
 | `shop.html` | Full catalogue with category filters |
 | `product.html?id=<id>` | Compound detail: specs, accordions, quantity + add to cart |
 | `about.html` | Standards, process, founder note |
-| `journal.html` | Editorial articles |
 | `contact.html` | Contact form, FAQ |
 | `cart.html` | Cart + delivery details + checkout (→ hosted gateway) |
 | `confirmation.html` / `failed.html` | Payment result pages (poll order status) |
