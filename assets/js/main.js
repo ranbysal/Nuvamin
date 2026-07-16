@@ -49,6 +49,23 @@
   var footerEl = document.querySelector(".site-footer");
   if (footerEl && !footerEl.innerHTML.trim()) footerEl.innerHTML = footerHTML;
 
+  /* ---------- policy month ---------- */
+
+  var policyDates = document.querySelectorAll("[data-policy-updated]");
+  if (policyDates.length) {
+    var policyNow = new Date();
+    var policyLabel = new Intl.DateTimeFormat("en-US", {
+      month: "long",
+      year: "numeric"
+    }).format(policyNow);
+    var policyMachineDate = policyNow.getFullYear() + "-" +
+      ("0" + (policyNow.getMonth() + 1)).slice(-2);
+    policyDates.forEach(function (dateEl) {
+      dateEl.textContent = policyLabel;
+      dateEl.setAttribute("datetime", policyMachineDate);
+    });
+  }
+
   /* ---------- header scroll state + progress hairline ---------- */
 
   var progressEl = document.createElement("div");

@@ -1090,10 +1090,6 @@ html.nv-gate-open { overflow: hidden; }
 .legal-prose h2 { font-family: var(--display); font-size: 15px; letter-spacing: 0.18em; text-transform: uppercase; margin: 48px 0 14px; }
 .legal-prose p, .legal-prose li { font-size: 15px; line-height: 1.85; color: var(--ink-60); margin-bottom: 14px; }
 .legal-prose ul { padding-left: 20px; margin-bottom: 14px; }
-.legal-prose .placeholder-note {
-  border: 1px solid var(--line); background: var(--cream); padding: 18px 22px;
-  font-size: 13px; line-height: 1.7; color: var(--slate); margin: 26px 0 8px;
-}
 .legal-updated { font-family: var(--display); font-size: 10.5px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-40); margin-top: 18px; }
 
 /* keyboard focus visibility on cart controls */

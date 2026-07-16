@@ -29,7 +29,7 @@ lifecycle, and Stripe go-live checklist.
 | `contact.html` | Contact form, FAQ |
 | `cart.html` | Cart + delivery details + checkout (→ hosted gateway) |
 | `confirmation.html` / `failed.html` | Payment result pages (poll order status) |
-| `privacy.html` / `terms.html` / `shipping-returns.html` | Policy pages — **placeholder legal copy, counsel must finalize** |
+| `privacy.html` / `terms.html` / `shipping-returns.html` | Privacy, terms of sale, shipping and returns policies |
 | `404.html`, `robots.txt`, `sitemap.xml` | Standard site furniture |
 
 Product data lives in `assets/js/products.js` (display) and
@@ -88,7 +88,7 @@ the Express API as a serverless function (`api/index.js` + `vercel.json`).
 - [ ] Stripe credentials set and a Stripe test-mode Checkout completed
 - [ ] Stripe webhook registered and a signed test event received successfully
 - [ ] Legal pages (`privacy.html`, `terms.html`, `shipping-returns.html`)
-      finalized by counsel — placeholders are marked `[PLACEHOLDER]`
+      reviewed and finalized by counsel
 - [ ] VAT/sales-tax treatment decided and reflected in prices/terms
 - [ ] `sitemap.xml` / `robots.txt` / OG tags updated to the final domain
 - [ ] Strong `ADMIN_TOKEN`; SMTP configured and receipt tested
