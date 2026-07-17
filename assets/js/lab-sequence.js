@@ -1,10 +1,10 @@
-/* Nuvamin — "Plate Series": scroll-driven pinned photo sequence (section 04).
+/* Nuvamin — "Plate Series": scroll-driven pinned photo sequence (section 03).
  *
  * Progressive enhancement over the static stacked layout in index.html:
  *  - Desktop (no reduced-motion, >=720w, >=620h): the section pins for 340vh
- *    and scroll scrubs four "plates" through alternating curtain reveals with
- *    counter-parallax mattes, line-masked captions, a rolling ghost numeral,
- *    and an honest 1px progress rail.
+ *    and scroll scrubs four "plates" through soft cross-dissolves with subtle
+ *    scale settles, line-masked captions, a rolling ghost numeral, and an
+ *    honest 1px progress rail.
  *  - Narrow viewports: no pin — the stacked layout gains a gentle scrubbed
  *    settle per plate and caption line-rises.
  *  - Reduced motion / GSAP missing / any failure: the untouched stacked
@@ -12,7 +12,7 @@
  *    class + GSAP-managed inline styles + the pin spacer); gsap.matchMedia
  *    reverts all of it atomically when conditions change.
  *
- * Transform ownership: transitions own yPercent/scale, drift owns y(px),
+ * Transform ownership: transitions own scale/opacity, drift owns y(px), and
  * the digit roll owns the inner column — separate channels, no collisions.
  * No .reveal / data-parallax inside [data-seq] (those systems would fight).
  */
@@ -93,8 +93,6 @@
 
     var masks = chapters.map(function (c) { return q("[data-seq-mask]", c); });
     var medias = chapters.map(function (c) { return q("[data-seq-media]", c); });
-    var scrims = chapters.map(function (c) { return q("[data-seq-scrim]", c); });
-    var blades = chapters.map(function (c) { return q("[data-seq-blade]", c); });
     var caps = chapters.map(function (c) {
       return { lines: qa("[data-seq-line]", c), rule: q("[data-seq-rule]", c) };
     });
@@ -106,17 +104,13 @@
     var track = q("[data-seq-track]");
     var ticks = qa("[data-seq-tick]");
 
-    // Entry direction per transition: T1 bottom, T2 top, T3 bottom.
-    var fromBottom = [true, false, true];
-    var CLOSED_BOTTOM = "inset(100% 0% 0% 0%)";
-    var CLOSED_TOP = "inset(0% 0% 100% 0%)";
     var OPEN = "inset(0% 0% 0% 0%)";
 
     /* -------- initial states (GSAP-owned; reverted automatically) -------- */
     chapters.forEach(function (c, i) {
+      gsap.set(masks[i], { clipPath: OPEN, autoAlpha: i === 0 ? 1 : 0 });
+      gsap.set(medias[i], { yPercent: 0, scale: i === 0 ? 1.06 : 1.025, skewY: 0 });
       if (i === 0) return;
-      gsap.set(masks[i], { clipPath: fromBottom[i - 1] ? CLOSED_BOTTOM : CLOSED_TOP });
-      gsap.set(medias[i], { yPercent: fromBottom[i - 1] ? 12 : -12, scale: 1.06 });
       gsap.set(caps[i].lines, { yPercent: 110, autoAlpha: 0 });
       gsap.set(caps[i].rule, { scaleX: 0 });
     });
@@ -125,8 +119,6 @@
     /* ------------------------------- master pinned, scrubbed timeline ---- */
     var SEG = 0.20; // width of each transition
     var T = [0.10, 0.42, 0.74]; // transition start positions
-    var activeIndex = 0;
-    var shear = null; // velocity quickTo, rebuilt per active media
 
     var tl = gsap.timeline({
       defaults: { ease: "none" },
@@ -143,17 +135,7 @@
           // derive (never accumulate) the active chapter from progress
           var p = self.progress;
           var idx = p < T[0] + SEG * 0.5 ? 0 : p < T[1] + SEG * 0.5 ? 1 : p < T[2] + SEG * 0.5 ? 2 : 3;
-          if (idx !== activeIndex) {
-            activeIndex = idx;
-            shear = gsap.quickTo(medias[idx], "skewY", { duration: 0.5, ease: "power3" });
-          }
           ticks.forEach(function (t, k) { t.classList.toggle("is-here", k === idx); });
-          // velocity shear — clamped so it reads as weight, never as an effect
-          if (!shear) shear = gsap.quickTo(medias[idx], "skewY", { duration: 0.5, ease: "power3" });
-          shear(gsap.utils.clamp(-1.1, 1.1, self.getVelocity() / -2600));
-        },
-        onScrubComplete: function () {
-          gsap.to(medias[activeIndex], { skewY: 0, duration: 0.4, overwrite: "auto" });
         },
       },
     });
@@ -161,37 +143,27 @@
     // Hold 1 — plate one finishes arriving (hands off from the lead-in).
     tl.fromTo(medias[0], { scale: 1.06 }, { scale: 1, duration: 0.10, ease: "power1.out", immediateRender: false }, 0);
 
-    // Three curtain transitions.
+    // Three quiet cross-dissolves. The outgoing plate remains steady while
+    // the next plate resolves over it; a small scale settle adds depth without
+    // introducing directional movement or scroll-velocity distortion.
     T.forEach(function (s, i) {
       var inn = i + 1;   // incoming chapter index
       var out = i;       // outgoing chapter index
-      var bottom = fromBottom[i];
 
-      // incoming curtain opens
+      // incoming plate dissolves in and settles gently
       tl.fromTo(masks[inn],
-        { clipPath: bottom ? CLOSED_BOTTOM : CLOSED_TOP },
-        { clipPath: OPEN, duration: SEG, ease: "power2.inOut", immediateRender: false }, s);
-
-      // incoming media counter-slides against the curtain + settles
+        { autoAlpha: 0 },
+        { autoAlpha: 1, duration: SEG, ease: "sine.inOut", immediateRender: false }, s);
       tl.fromTo(medias[inn],
-        { yPercent: bottom ? 12 : -12, scale: 1.06 },
-        { yPercent: 0, scale: 1, duration: SEG, ease: "power2.out", immediateRender: false }, s);
+        { scale: 1.025 },
+        { scale: 1, duration: SEG, ease: "power1.out", immediateRender: false }, s);
 
-      // outgoing media recedes under a light scrim
-      tl.to(medias[out], { scale: "+=0.045", yPercent: bottom ? -4 : 4, duration: SEG, ease: "power1.inOut" }, s);
-      tl.to(scrims[out], { opacity: 0.16, duration: SEG, ease: "power1.in" }, s);
-      tl.set(chapters[out], { autoAlpha: 0 }, s + SEG);
-      tl.set(scrims[out], { opacity: 0 }, s + SEG);
+      // outgoing plate recedes almost imperceptibly, then clears only after
+      // the incoming image is fully opaque so no background flashes through.
+      tl.to(medias[out], { scale: 1.02, duration: SEG, ease: "power1.inOut" }, s);
+      tl.set(masks[out], { autoAlpha: 0 }, s + SEG);
 
-      // blade hairline tracks the curtain edge (keyline language, not a glow)
-      var mask = masks[inn];
-      tl.fromTo(blades[inn],
-        { y: function () { return bottom ? mask.offsetHeight : 0; } },
-        { y: function () { return bottom ? 0 : mask.offsetHeight; }, duration: SEG, ease: "power2.inOut", immediateRender: false }, s);
-      tl.fromTo(blades[inn], { opacity: 0 }, { opacity: 0.3, duration: SEG * 0.3, ease: "power1.in", immediateRender: false }, s);
-      tl.to(blades[inn], { opacity: 0, duration: SEG * 0.3, ease: "power1.out" }, s + SEG * 0.7);
-
-      // captions: outgoing lines exit early, incoming resolve as the curtain closes
+      // captions: outgoing lines exit early, incoming resolve through the dissolve
       tl.to(caps[out].lines, { yPercent: -110, autoAlpha: 0, duration: SEG * 0.40, stagger: SEG * 0.04, ease: "power2.in" }, s);
       tl.to(caps[out].rule, { scaleX: 0, duration: SEG * 0.40, ease: "power2.in" }, s);
       tl.fromTo(caps[inn].lines,
