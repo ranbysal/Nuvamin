@@ -10,9 +10,10 @@ What gets wired up:
 | Feature | Where it lands |
 | --- | --- |
 | Contact-form messages | Company inbox (`CONTACT_TO`), Reply-To set to the visitor |
-| Customer receipt on paid order | Customer's email, **from** the company address |
-| "New paid order" notification | Company inbox (`ORDER_NOTIFY_EMAIL`) with items, totals, shipping address |
-| Orders & fulfilment board | A Google Sheet the client owns — one row per paid order, with a Fulfilled checkbox |
+| Payment-instructions invoice | Customer's email immediately after **Place order** |
+| Customer receipt on confirmed payment | Customer's email, **from** the company address |
+| Order notifications | Company inbox (`ORDER_NOTIFY_EMAIL`) when placed and when paid |
+| Payment & fulfilment board | A Google Sheet the client owns — one row per placed order, with payment and fulfilment controls |
 | "It's on the way" email | Sent from the client's Gmail automatically when Fulfilled is ticked |
 | The Lot Report list | A second Google Sheet — newsletter signups land here automatically |
 | Welcome email + first-order code | Sent from the client's Gmail the moment someone subscribes |
@@ -58,30 +59,60 @@ variables take effect.
 
 ---
 
+## Part 1b — Payment destinations in Vercel
+
+The invoice email reads payment destinations only from server-side Vercel
+environment variables. Real account details never belong in GitHub. Add any
+combination of the following later, scoped to **Production**, then redeploy:
+
+| Method | Environment variables |
+| --- | --- |
+| Zelle | `ZELLE_RECIPIENT` (email/phone), optional `ZELLE_ACCOUNT_NAME` |
+| Cash App | `CASHAPP_CASHTAG`, optional `CASHAPP_PAYMENT_URL` |
+| PayPal | `PAYPAL_ACCOUNT`, optional `PAYPAL_PAYMENT_URL` |
+| Crypto | `CRYPTO_CURRENCY`, `CRYPTO_NETWORK`, `CRYPTO_WALLET_ADDRESS`, optional `CRYPTO_PAYMENT_URL` |
+
+A method is included only when its destination is configured. If all methods
+are still blank, the customer email safely says that the lab will follow up
+with payment instructions; it never displays placeholders or invented account
+details. Crypto emails explicitly show the configured currency/network to
+reduce wrong-network transfers.
+
+`CHECKOUT_MODE=invoice` is the active workflow. Stripe code and credentials
+remain intact but unused. Setting `CHECKOUT_MODE=stripe` in Vercel and
+redeploying restores the hosted Stripe flow later.
+
+---
+
 ## Part 2 — Orders & fulfilment board in Google Sheets
 
-Each **paid** order lands as a row in a Google Sheet the client owns —
-formatted as a fulfilment board. A team member packs the order, optionally
-enters a **Tracking #** and **Carrier**, then ticks the **Fulfilled ✓**
-checkbox — and the customer instantly receives the designed
-*"It's on the way"* email, sent from this Google account's Gmail, with a
-Track Package button when the carrier is UPS / USPS / FedEx / DHL.
+Each **placed** order lands as an amber **AWAITING PAYMENT** row in a Google
+Sheet the client owns. After funds arrive, a team member selects the payment
+method, optionally records its transaction/reference, and ticks **Payment
+confirmed ✓**. That securely marks the Redis order paid and sends the designed
+*"Good things are coming"* confirmation email exactly once.
+
+After the order is packed, enter its **Tracking #**, choose a **Carrier**, and
+tick **Fulfilled ✓**. The customer instantly receives the designed *"It's on
+the way"* email from this Google account's Gmail, with a working Track Package
+button. UPS, USPS, FedEx and DHL are supported by the carrier dropdown.
 
 The full script lives in this repo at **`google/nuvamin-orders.gs`**.
 
 **1. Create the sheet** — [sheets.new](https://sheets.new), name it
 *Nuvamin Orders*.
 
-**2. Attach the script** — **Extensions → Apps Script**, delete what's in the
-editor, paste the entire contents of `google/nuvamin-orders.gs`, and change
-the `SECRET` line to any long random string. (`SUPPORT_EMAIL` at the top is
-already `support@nuvamin.bio` — the Reply-To on shipping emails.) Save.
+**2. Attach or update the script** — **Extensions → Apps Script**, replace the
+editor contents with `google/nuvamin-orders.gs`. Preserve the current `SECRET`
+if this sheet is already connected; otherwise change it to any long random
+string. (`SUPPORT_EMAIL` is already `support@nuvamin.bio`.) Save.
 
 **3. Run `setup()` once** — in the toolbar, select `setup` in the function
 dropdown → **Run** → authorize when prompted (it needs Sheets + Gmail because
-it sends the shipping email as this account). This formats the board
-(black header, status colours, Fulfilled checkboxes, hidden data column) and
-installs the fulfilment trigger. Safe to re-run any time.
+it sends the shipping email as this account). This formats the board with
+payment and fulfilment controls and installs the edit trigger. Safe to re-run.
+If the sheet used the previous paid-only layout, `setup()` inserts the new
+payment columns while preserving existing orders, tracking and hidden data.
 
 **4. Deploy the order receiver** — blue **Deploy → New deployment** → gear →
 **Web app**:
@@ -99,17 +130,21 @@ installs the fulfilment trigger. Safe to re-run any time.
 
 ### Day-to-day for the fulfilment team
 
-1. New paid orders appear automatically — amber **NEW — TO FULFIL** status,
-   with items, quantities, full shipping address, total and contact email.
-2. Pack the order. Type the tracking number into **Tracking #** and the
-   carrier (e.g. `UPS`) into **Carrier**.
-3. Tick **Fulfilled ✓**. The row turns green **SHIPPED ✓**, gets a
+1. New orders appear automatically — amber **AWAITING PAYMENT**, with items,
+   quantities, shipping address, total and customer email.
+2. Verify the payment outside Nuvamin. Choose **Zelle**, **Cash App**,
+   **PayPal**, **Crypto** or **Other** under **Payment method**. Enter the
+   provider reference or crypto transaction hash when one is available.
+3. Tick **Payment confirmed ✓**. The row turns blue **PAID — TO FULFIL**, gets
+   a timestamp, and the customer receives the order-confirmation email. If
+   delivery fails, the box resets so the action can be retried safely.
+4. Pack the order. Enter **Tracking #** and choose UPS, USPS, FedEx or DHL.
+5. Tick **Fulfilled ✓**. The row turns green **SHIPPED ✓**, gets a
    timestamp, and the customer's shipping-confirmation email sends
    immediately (a toast in the corner confirms who it went to).
-4. Ticking the box on an already-shipped row does nothing — the email can
-   never send twice.
+6. Completed actions are idempotent — ticking them again does not resend mail.
 
-> To change the script later: edit it, then **Deploy → Manage deployments →
+> After replacing the script: **Deploy → Manage deployments →
 > pencil → Version: New version → Deploy** — the URL stays the same.
 
 ---
@@ -164,19 +199,22 @@ string (use a **different** one than the orders sheet). Save, then run
 
 1. On the live site: **Contact page** → send a test message → it should arrive
    in the `CONTACT_TO` inbox; hitting Reply should address the visitor.
-2. Place a test order (with the mock provider locally or on a preview, or
-   Stripe test mode when it is configured):
-   - customer email receives the receipt **from the company address**,
-   - `ORDER_NOTIFY_EMAIL` receives the "New order NV-… (paid)" alert with the
-     shipping address,
-   - a new amber **NEW — TO FULFIL** row appears on the orders board;
-   - tick **Fulfilled ✓** on that row: it turns green and the shipped email
-     (with tracking, if entered) arrives at the customer address.
-3. Newsletter: submit the form on the homepage with a test address — a green
+2. Place a test order in invoice mode:
+   - the browser shows **Order placed — Check your inbox**;
+   - the customer receives the payment-instructions email;
+   - `ORDER_NOTIFY_EMAIL` receives the awaiting-payment alert;
+   - a new amber **AWAITING PAYMENT** row appears on the orders board.
+3. Select a payment method and tick **Payment confirmed ✓**:
+   - the row turns blue **PAID — TO FULFIL**;
+   - the customer receives the designed order-confirmation email;
+   - the company inbox receives the paid-order notification.
+4. Add tracking and carrier, then tick **Fulfilled ✓**. The row turns green
+   and the customer receives the shipped email with Track Package link.
+5. Newsletter: submit the form on the homepage with a test address — a green
    row appears on the subscribers sheet and the welcome email (code LOT10)
    arrives. Use the code on a first test order and confirm the discount line;
    click Unsubscribe in the email footer and confirm the row turns red.
-4. If any email doesn't arrive: check Vercel → the deployment → **Functions
+6. If any email doesn't arrive: check Vercel → the deployment → **Functions
    logs** — SMTP and sheet errors are logged there with the reason.
 
 ## Troubleshooting
@@ -188,3 +226,6 @@ string (use a **different** one than the orders sheet). Save, then run
   Authenticate email; Workspace walks you through the DNS records).
 - **No sheet row** — re-check that `SHEETS_WEBHOOK_SECRET` exactly matches the
   script's `SECRET`, and that the deployment's access is set to *Anyone*.
+- **"Ordering is being configured"** — the deployed Orders Apps Script is
+  still the old paid-only version. Paste the latest `google/nuvamin-orders.gs`,
+  run `setup()`, then deploy a **New version** of the existing web app.

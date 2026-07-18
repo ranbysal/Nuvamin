@@ -1,11 +1,13 @@
 "use strict";
 
 /**
- * Nuvamin — storefront static host + hosted-gateway checkout API.
+ * Nuvamin — storefront static host + invoice-first order API.
  *
  * Route map:
  *   GET  /api/health              boot + configuration diagnostics (no secrets)
- *   POST /api/checkout            create pending order + hosted session -> {redirectUrl}
+ *   POST /api/checkout            place order; invoice mode emails payment options
+ *   POST /api/orders/:id/confirm-payment
+ *                                 Sheet-only payment confirmation action
  *   GET  /checkout/success        gateway return (success) -> confirmation page
  *   GET  /checkout/cancel         gateway return (cancel)  -> failed page
  *   POST /api/webhook/payment     signed webhook — SOURCE OF TRUTH for status
@@ -92,6 +94,13 @@ function cleanStr(v, max) {
   return String(v == null ? "" : v).trim().slice(0, max);
 }
 
+function secureSecretMatch(actual, expected) {
+  if (!expected) return false;
+  const a = Buffer.from(String(actual || ""));
+  const b = Buffer.from(String(expected));
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
+
 /**
  * Validate + normalize customer contact and shipping address.
  * Returns { error } or { customer, shipping }.
@@ -126,10 +135,99 @@ function validateCustomer(body) {
 
 /* ---------------------------------------------------------------- checkout */
 
-// Create the order (pending) BEFORE payment, then open a hosted session.
+function orderPlacedUrl(order, emailSent) {
+  return (
+    "/order-placed.html?order=" + encodeURIComponent(order.id) +
+    "&email=" + (emailSent ? "sent" : "delayed")
+  );
+}
+
+async function deliverPlacedOrder(order) {
+  const [invoiceResult, sheetResult, notifyResult] = await Promise.allSettled([
+    order.invoiceSent ? Promise.resolve({ sent: true }) : email.sendPaymentRequest(order),
+    order.sheetLogged ? Promise.resolve({ logged: true }) : sheets.logOrder(order),
+    order.orderPlacedNotificationSent
+      ? Promise.resolve({ sent: true })
+      : email.sendOrderPlacedNotification(order),
+  ]);
+
+  const invoiceSent = invoiceResult.status === "fulfilled" && invoiceResult.value.sent === true;
+  const sheetLogged = sheetResult.status === "fulfilled" && sheetResult.value.logged === true;
+  const notificationSent = notifyResult.status === "fulfilled" && notifyResult.value.sent === true;
+
+  if (invoiceResult.status === "rejected") {
+    console.error(`[order:${order.id}] payment email failed:`, invoiceResult.reason.message);
+  }
+  if (notifyResult.status === "rejected") {
+    console.error(`[order:${order.id}] internal notification failed:`, notifyResult.reason.message);
+  }
+
+  await orders.updateOrder(
+    order.id,
+    (o) => {
+      if (invoiceSent) o.invoiceSent = true;
+      if (sheetLogged) o.sheetLogged = true;
+      if (notificationSent) o.orderPlacedNotificationSent = true;
+    },
+    "invoice:delivery-attempted"
+  );
+
+  return { invoiceSent, sheetLogged, notificationSent };
+}
+
+async function finalizePaidOrder(order, { logToSheet = false } = {}) {
+  let current = (await orders.getOrder(order.id)) || order;
+  let receiptError = null;
+
+  if (!current.receiptSent) {
+    try {
+      const sent = await email.sendReceipt(current);
+      if (sent && sent.sent) {
+        current =
+          (await orders.updateOrder(current.id, (o) => (o.receiptSent = true), "receipt:sent")) || current;
+      }
+    } catch (err) {
+      receiptError = err;
+      console.error(`[order:${current.id}] confirmation email failed:`, err.message);
+    }
+  }
+
+  if (!current.paidNotificationSent) {
+    try {
+      await email.sendOrderNotification(current);
+      current =
+        (await orders.updateOrder(
+          current.id,
+          (o) => (o.paidNotificationSent = true),
+          "notification:paid-sent"
+        )) || current;
+    } catch (err) {
+      console.error(`[order:${current.id}] paid notification failed:`, err.message);
+    }
+  }
+
+  if (logToSheet && !current.sheetLogged) {
+    const logged = await sheets.logOrder(current);
+    if (logged.logged) {
+      current =
+        (await orders.updateOrder(current.id, (o) => (o.sheetLogged = true), "sheet:logged")) || current;
+    }
+  }
+
+  return { order: current, receiptError };
+}
+
+// Invoice mode is the production default. Stripe remains available behind
+// CHECKOUT_MODE=stripe, but it is never touched while invoice mode is active.
 app.post("/api/checkout", rateLimitCheckout, async (req, res) => {
   try {
-    const gw = gateway(); // resolve first — a config error must not create an orphan order
+    if (config.checkoutMode !== "invoice" && config.checkoutMode !== "stripe") {
+      return res.status(503).json({ error: "Ordering isn't available right now. Please try again later." });
+    }
+
+    // Resolve Stripe before creating an order so bad Stripe configuration
+    // cannot create an orphan. Invoice mode deliberately skips the gateway.
+    const gw = config.checkoutMode === "stripe" ? gateway() : null;
     const rawCart = (req.body && req.body.cart) || {};
     const pricing = catalog.priceOrder(rawCart);
 
@@ -140,6 +238,16 @@ app.post("/api/checkout", rateLimitCheckout, async (req, res) => {
     const checked = validateCustomer(req.body);
     if (checked.error) {
       return res.status(400).json({ error: checked.error });
+    }
+
+    if (config.checkoutMode === "invoice") {
+      const sheetWorkflow = await sheets.invoiceWorkflowStatus();
+      if (!sheetWorkflow.ready) {
+        console.error("[checkout] invoice sheet workflow is not ready:", sheetWorkflow.reason || sheetWorkflow);
+        return res.status(503).json({
+          error: "Ordering is being configured right now. Please try again shortly.",
+        });
+      }
     }
 
     // Optional first-order discount code (the Lot Report welcome offer).
@@ -160,15 +268,48 @@ app.post("/api/checkout", rateLimitCheckout, async (req, res) => {
       pricing.total = Number((pricing.subtotal - pricing.discount + pricing.shipping).toFixed(2));
     }
 
+    const rawRequestId = cleanStr(req.body && req.body.requestId, 100);
+    const requestId = /^[A-Za-z0-9_-]{16,100}$/.test(rawRequestId) ? rawRequestId : "";
+
+    if (config.checkoutMode === "invoice" && requestId) {
+      const existing = await orders.findByRequestId(requestId);
+      if (existing && existing.payment && existing.payment.provider === "manual_invoice") {
+        const delivered = await deliverPlacedOrder(existing);
+        return res.json({
+          orderId: existing.id,
+          redirectUrl: orderPlacedUrl(existing, delivered.invoiceSent || existing.invoiceSent),
+          emailSent: delivered.invoiceSent || existing.invoiceSent,
+          duplicatePrevented: true,
+        });
+      }
+    }
+
     const order = await orders.createOrder({
       pricing,
       customer: checked.customer,
       shipping: checked.shipping,
       currency: config.currency,
+      requestId,
     });
 
-    const session = await gw.createCheckoutSession(order, config.urls);
+    if (config.checkoutMode === "invoice") {
+      const invoiceOrder = await orders.updateOrder(
+        order.id,
+        (o) => {
+          o.payment.provider = "manual_invoice";
+          o.payment.method = "awaiting_selection";
+        },
+        "invoice:created"
+      );
+      const delivered = await deliverPlacedOrder(invoiceOrder);
+      return res.json({
+        orderId: invoiceOrder.id,
+        redirectUrl: orderPlacedUrl(invoiceOrder, delivered.invoiceSent),
+        emailSent: delivered.invoiceSent,
+      });
+    }
 
+    const session = await gw.createCheckoutSession(order, config.urls);
     await orders.updateOrder(
       order.id,
       (o) => {
@@ -177,15 +318,14 @@ app.post("/api/checkout", rateLimitCheckout, async (req, res) => {
       },
       "checkout:session-created"
     );
-
     return res.json({ orderId: order.id, redirectUrl: session.redirectUrl });
   } catch (err) {
     if (err.code === "GATEWAY_CONFIG" || err.code === "ORDER_STORE_CONFIG") {
       console.error("[checkout] unavailable — configuration:", err.message);
-      return res.status(503).json({ error: "Checkout isn't available right now. Please try again later." });
+      return res.status(503).json({ error: "Ordering isn't available right now. Please try again later." });
     }
     console.error("[checkout] error:", err.message);
-    return res.status(502).json({ error: "Unable to start checkout. Please try again." });
+    return res.status(502).json({ error: "Unable to place your order. Please try again." });
   }
 });
 
@@ -194,19 +334,34 @@ app.post("/api/checkout", rateLimitCheckout, async (req, res) => {
 // Boot + configuration diagnostics. Never throws and never touches secrets:
 // each subsystem reports its own state, so a production misconfiguration is
 // visible in one request instead of presenting as a crashed function.
-app.get("/api/health", (req, res) => {
-  let gatewayCheck;
-  try {
-    gatewayCheck = { ok: true, provider: gateway().name };
-  } catch (e) {
-    gatewayCheck = { ok: false, error: e.message };
+app.get("/api/health", async (req, res) => {
+  let gatewayCheck = { ok: true, active: false, provider: config.provider };
+  if (config.checkoutMode === "stripe") {
+    try {
+      gatewayCheck = { ok: true, active: true, provider: gateway().name };
+    } catch (e) {
+      gatewayCheck = { ok: false, active: true, error: e.message };
+    }
   }
+  const manualMethods = email.configuredPaymentMethods().map((method) => method.name);
+  const invoiceSheet =
+    config.checkoutMode === "invoice"
+      ? await sheets.invoiceWorkflowStatus()
+      : { ready: true, reason: "not-required" };
   res.json({
     ok: true,
     service: "nuvamin-api",
     time: new Date().toISOString(),
     env: { vercel: config.onVercel, production: config.isProduction },
     checks: {
+      checkout: {
+        ok:
+          config.checkoutMode === "stripe" ||
+          (config.checkoutMode === "invoice" && invoiceSheet.ready),
+        mode: config.checkoutMode,
+        configuredManualMethods: manualMethods,
+        invoiceSheetReady: invoiceSheet.ready,
+      },
       orderStore: orders.storeStatus(),
       gateway: gatewayCheck,
       email: { configured: Boolean(config.email.host && config.email.user) },
@@ -312,12 +467,73 @@ app.get("/api/unsubscribe", async (req, res) => {
   return res.redirect("/unsubscribed.html");
 });
 
+/* ----------------------------------------- manual payment confirmation */
+
+// Called only by the private Google Orders sheet after the team has verified
+// that funds arrived. The shared secret is server-side/Apps-Script-only and
+// the transition is idempotent, so re-ticking cannot send duplicate receipts.
+app.post("/api/orders/:id/confirm-payment", async (req, res) => {
+  if (!secureSecretMatch(req.body && req.body.secret, config.sheets.secret)) {
+    return res.status(401).json({ error: "unauthorized" });
+  }
+
+  try {
+    const order = await orders.getOrder(req.params.id);
+    if (!order) return res.status(404).json({ error: "order not found" });
+    if (!order.payment || order.payment.provider !== "manual_invoice") {
+      return res.status(409).json({ error: "order is not awaiting manual payment" });
+    }
+
+    const paymentMethod = cleanStr(req.body && req.body.paymentMethod, 80);
+    const paymentReference = cleanStr(req.body && req.body.paymentReference, 200);
+    if (!paymentMethod) {
+      return res.status(400).json({ error: "payment method is required" });
+    }
+
+    let paidOrder = order;
+    if (order.status !== orders.STATUS.PAID) {
+      paidOrder = await orders.setStatus(
+        order.id,
+        orders.STATUS.PAID,
+        {
+          provider: "manual_invoice",
+          method: paymentMethod,
+          transactionId: paymentReference || null,
+        },
+        "sheet:payment-confirmed"
+      );
+      if (!paidOrder) {
+        return res.status(409).json({ error: `order cannot be paid from status ${order.status}` });
+      }
+    }
+
+    const finalized = await finalizePaidOrder(paidOrder, { logToSheet: false });
+    if (finalized.receiptError || !finalized.order.receiptSent) {
+      return res.status(502).json({
+        error: "payment was recorded, but the confirmation email could not be sent; untick and retry",
+      });
+    }
+
+    return res.json({
+      ok: true,
+      orderId: finalized.order.id,
+      status: finalized.order.status,
+      receiptSent: true,
+    });
+  } catch (err) {
+    const cfg = err.code === "ORDER_STORE_CONFIG";
+    console.error(`[manual-payment] ${cfg ? "unavailable" : "failed"}:`, err.message);
+    return res.status(cfg ? 503 : 500).json({ error: cfg ? "order store unavailable" : "confirmation failed" });
+  }
+});
+
 /* ------------------------------------------------------- gateway returns */
 
 // Success return: the browser is back, but we do NOT mark paid here — the
 // webhook is the source of truth. Hand off to the styled confirmation page,
 // which polls order status until the webhook confirms payment.
 app.get(config.paths.success, async (req, res) => {
+  if (config.checkoutMode !== "stripe") return res.redirect("/shop.html");
   try {
     const order = await orders.getOrder(String(req.query.order || ""));
     if (!order) return res.redirect("/cart.html");
@@ -331,6 +547,7 @@ app.get(config.paths.success, async (req, res) => {
 // Cancel/abandon return: mark cancelled (unless already resolved) and show the
 // failed page with a retry action.
 app.get(config.paths.cancel, async (req, res) => {
+  if (config.checkoutMode !== "stripe") return res.redirect("/cart.html");
   try {
     const order = await orders.getOrder(String(req.query.order || ""));
     if (order && order.status === orders.STATUS.PENDING) {
@@ -361,28 +578,16 @@ async function handlePaymentWebhook(req, res) {
   }
 
   if (event.type === "paid") {
-    const updated = await orders.setStatus(
-      order.id,
-      orders.STATUS.PAID,
-      { transactionId: event.transactionId, last4: event.last4 },
-      "webhook:paid"
-    );
-    if (updated && !updated.receiptSent) {
-      try {
-        await email.sendReceipt(updated);
-        await orders.updateOrder(order.id, (o) => (o.receiptSent = true), "receipt:sent");
-      } catch (e) {
-        console.error("[webhook] receipt send failed:", e.message);
-      }
-      // Company-side hooks: notify the inbox + append to the order sheet.
-      // Neither may break payment processing — failures are logged only.
-      try {
-        await email.sendOrderNotification(updated);
-      } catch (e) {
-        console.error("[webhook] order notification failed:", e.message);
-      }
-      await sheets.logOrder(updated);
-    }
+    const updated =
+      order.status === orders.STATUS.PAID
+        ? order
+        : await orders.setStatus(
+            order.id,
+            orders.STATUS.PAID,
+            { transactionId: event.transactionId, last4: event.last4 },
+            "webhook:paid"
+          );
+    if (updated) await finalizePaidOrder(updated, { logToSheet: true });
   } else if (event.type === "failed") {
     await orders.setStatus(order.id, orders.STATUS.FAILED, { transactionId: event.transactionId }, "webhook:failed");
   } else if (event.type === "cancelled") {
@@ -395,6 +600,9 @@ async function handlePaymentWebhook(req, res) {
 }
 
 app.post(config.paths.webhook, async (req, res) => {
+  if (config.checkoutMode !== "stripe") {
+    return res.status(404).json({ error: "payment gateway is inactive" });
+  }
   try {
     await handlePaymentWebhook(req, res);
   } catch (err) {
@@ -464,7 +672,8 @@ app.get("/admin/orders", requireAdmin, async (req, res) => {
 // Decided from config (not the gateway instance) so mounting never needs to
 // construct a gateway at import time.
 
-const mockRoutesActive = config.provider === "mock" && !config.isProduction;
+const mockRoutesActive =
+  config.checkoutMode === "stripe" && config.provider === "mock" && !config.isProduction;
 
 if (mockRoutesActive) {
   app.get("/mock-hosted", async (req, res) => {

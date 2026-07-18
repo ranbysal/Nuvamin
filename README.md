@@ -1,17 +1,17 @@
 # Nuvamin
 
 Research-peptide ecommerce storefront. Editorial, minimal, evidence-led —
-with a full hosted-gateway checkout backend (order creation, signed payment
-webhooks, receipts, admin records).
+with an invoice-first order workflow, manual payment verification, designed
+transactional email and a Google Sheets fulfilment board.
 
 ## Stack
 
 - **Frontend** — static HTML + CSS + vanilla JS. No build step. Self-hosted
   fonts (Space Grotesk, Fraunces, Inter), real product photography (webp).
-- **Backend** — Node.js (≥20) + Express in `server/`. Stripe Checkout is the
-  production payment provider; a built-in mock is available only outside
-  production for development. **No card data ever touches this codebase** —
-  card entry happens on Stripe's hosted page.
+- **Backend** — Node.js (≥20) + Express in `server/`. The active flow creates
+  an awaiting-payment order and emails configurable Zelle, Cash App, PayPal
+  and crypto instructions. Stripe Checkout remains in the codebase behind
+  `CHECKOUT_MODE=stripe`, but is inactive by default.
 - **Order store** — Upstash Redis in production (`ORDER_STORE=redis`), JSON
   file for local development (`ORDER_STORE=file`).
 
@@ -27,8 +27,9 @@ lifecycle, and Stripe go-live checklist.
 | `product.html?id=<id>` | Compound detail: specs, accordions, quantity + add to cart |
 | `about.html` | Standards, process, founder note |
 | `contact.html` | Contact form, FAQ |
-| `cart.html` | Cart + delivery details + checkout (→ hosted gateway) |
-| `confirmation.html` / `failed.html` | Payment result pages (poll order status) |
+| `cart.html` | Cart + delivery details + **Place order** |
+| `order-placed.html` | Awaiting-payment result page |
+| `confirmation.html` / `failed.html` | Paid confirmation / retained Stripe failure page |
 | `privacy.html` / `terms.html` / `shipping-returns.html` | Privacy, terms of sale, shipping and returns policies |
 | `404.html`, `robots.txt`, `sitemap.xml` | Standard site furniture |
 
@@ -41,14 +42,14 @@ prices); shared behaviour in `assets/js/main.js`; all styling in
 
 ```sh
 npm install
-cp .env.example .env      # defaults: PAYMENT_PROVIDER=mock, ORDER_STORE=file
+cp .env.example .env      # defaults: CHECKOUT_MODE=invoice, ORDER_STORE=file
 npm start                 # site + API on http://localhost:3000
 ```
 
-Add items → Cart → fill delivery details → Checkout. The mock provider shows a
-simulated hosted payment page (Pay / Decline / Cancel) so the whole lifecycle —
-signed webhook, receipt (printed to console), admin record — works with no real
-credentials.
+Add items → Cart → fill delivery details → Place order. In local development,
+emails and the Sheet row print to the console when those integrations are not
+configured. Stripe/mock testing remains available by setting
+`CHECKOUT_MODE=stripe` and `PAYMENT_PROVIDER=mock`.
 
 ## Deploy on Vercel (production setup)
 
@@ -65,19 +66,18 @@ the Express API as a serverless function (`api/index.js` + `vercel.json`).
    (Without it the API refuses to boot on Vercel — the serverless filesystem
    can't persist orders.)
 3. **Set environment variables** (Vercel → *Settings* → *Environment Variables*):
-   - `PUBLIC_BASE_URL` — e.g. `https://your-domain.com` (drives return + webhook URLs)
-   - `PAYMENT_PROVIDER=stripe`, `STRIPE_SECRET_KEY`, and
-     `STRIPE_WEBHOOK_SECRET` (see `.env.example`; local development and
-     previews can use `PAYMENT_PROVIDER=mock`, which is always rejected in
-     production)
+   - `PUBLIC_BASE_URL` — e.g. `https://your-domain.com`
+   - `CHECKOUT_MODE=invoice` (the default)
+   - add manual-payment destination variables later; see `.env.example`
    - `ADMIN_TOKEN` — long random string protecting `/admin/orders`
    - `SMTP_HOST/PORT/USER/PASS`, `RECEIPT_FROM`, `SUPPORT_EMAIL` — real receipts
 4. **Connect Google Workspace email + the order sheet** — contact-form
    delivery, customer receipts from the company address, new-order alerts,
    and the Google Sheets order log are all env-driven. Copy-paste setup:
    [GOOGLE-WORKSPACE-SETUP.md](GOOGLE-WORKSPACE-SETUP.md).
-5. **Register the webhook** in the Stripe Dashboard:
-   `https://YOUR_DOMAIN/api/webhook/payment`.
+5. **Update the Orders Apps Script** — paste `google/nuvamin-orders.gs`, run
+   `setup()`, and deploy a new version. Invoice ordering fails closed until the
+   server verifies this payment-aware script is active.
 6. **Domain** — `sitemap.xml`, `robots.txt` and the `og:image` meta tags are
    set to the production domain `https://nuvamin.bio`. Remember to set
    `PUBLIC_BASE_URL=https://nuvamin.bio` in Vercel so payment return and
@@ -85,8 +85,10 @@ the Express API as a serverless function (`api/index.js` + `vercel.json`).
 
 ## Before go-live checklist
 
-- [ ] Stripe credentials set and a Stripe test-mode Checkout completed
-- [ ] Stripe webhook registered and a signed test event received successfully
+- [ ] Latest Orders Apps Script deployed and `setup()` run
+- [ ] Payment-instructions email tested (with or without destinations configured)
+- [ ] Payment confirmed checkbox sends one confirmation email
+- [ ] Carrier + tracking + Fulfilled sends the Track Package email
 - [ ] Legal pages (`privacy.html`, `terms.html`, `shipping-returns.html`)
       reviewed and finalized by counsel
 - [ ] VAT/sales-tax treatment decided and reflected in prices/terms

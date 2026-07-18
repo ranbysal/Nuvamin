@@ -3,7 +3,7 @@
 /**
  * Order log → Google Sheets.
  *
- * Posts one JSON row per PAID order to a Google Apps Script "web app" URL
+ * Posts one JSON row per PLACED order to a Google Apps Script "web app" URL
  * bound to the client's spreadsheet (setup + the script to paste are in
  * GOOGLE-WORKSPACE-SETUP.md). No Google API keys or service accounts needed —
  * the client owns the sheet and the script; this server only needs the URL
@@ -18,6 +18,54 @@
  */
 
 const config = require("./config");
+let capabilityCache = null;
+
+async function postToSheet(payload) {
+  const resp = await fetch(config.sheets.webhookUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(Object.assign({ secret: config.sheets.secret }, payload)),
+    redirect: "follow",
+  });
+  const text = await resp.text().catch(() => "");
+  if (!resp.ok) throw new Error(`sheet webhook responded ${resp.status}: ${text.slice(0, 200)}`);
+  let body = {};
+  try { body = JSON.parse(text || "{}"); } catch (_err) {}
+  return body;
+}
+
+/**
+ * Refuse live invoice orders until the deployed Sheet script understands the
+ * unpaid-order + payment-confirmation workflow. This prevents the previous
+ * paid-only sheet from presenting an unpaid order as ready to fulfil.
+ */
+async function invoiceWorkflowStatus() {
+  if (!config.sheets.webhookUrl || !config.sheets.secret) {
+    return config.isProduction
+      ? { ready: false, reason: "not-configured" }
+      : { ready: true, reason: "development-without-sheet" };
+  }
+  if (capabilityCache && capabilityCache.expiresAt > Date.now()) {
+    return capabilityCache.value;
+  }
+  try {
+    const result = await postToSheet({ action: "capabilities" });
+    const capabilities = Array.isArray(result.capabilities) ? result.capabilities : [];
+    const ready = Number(result.version) >= 2 &&
+      capabilities.includes("pending_orders") && capabilities.includes("confirm_payment");
+    const value = { ready, version: result.version || null, capabilities };
+    capabilityCache = {
+      value,
+      expiresAt: Date.now() + (ready ? 5 * 60 * 1000 : 15 * 1000),
+    };
+    return value;
+  } catch (err) {
+    console.error("[sheets] capability check failed:", err.message);
+    const value = { ready: false, reason: err.message };
+    capabilityCache = { value, expiresAt: Date.now() + 15 * 1000 };
+    return value;
+  }
+}
 
 function rowFor(order) {
   const a = order.shippingAddress || {};
@@ -46,6 +94,8 @@ function rowFor(order) {
     address: addressLines.join("\n"),
     transactionId: (order.payment && order.payment.transactionId) || "",
     provider: (order.payment && order.payment.provider) || "",
+    paymentMethod: (order.payment && order.payment.method) || "",
+    paidAt: order.paidAt || "",
   };
 }
 
@@ -56,16 +106,7 @@ async function logOrder(order) {
     return { logged: false, reason: "not-configured" };
   }
   try {
-    const resp = await fetch(config.sheets.webhookUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ secret: config.sheets.secret, row }),
-      redirect: "follow", // Apps Script replies via a 302 to a result URL
-    });
-    if (!resp.ok) {
-      const body = await resp.text().catch(() => "");
-      throw new Error(`sheet webhook responded ${resp.status}: ${body.slice(0, 200)}`);
-    }
+    await postToSheet({ action: "place_order", row });
     return { logged: true };
   } catch (e) {
     console.error(`[sheets] failed to log order ${order.id}:`, e.message);
@@ -73,4 +114,4 @@ async function logOrder(order) {
   }
 }
 
-module.exports = { logOrder, rowFor };
+module.exports = { invoiceWorkflowStatus, logOrder, rowFor };

@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Order Placed — Nuvamin</title>
+<meta name="description" content="Your Nuvamin order has been placed.">
+<meta name="robots" content="noindex">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23000000'/%3E%3Ctext x='16' y='22' text-anchor='middle' font-family='Arial' font-size='17' fill='%23FFFFFF'%3EN%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body data-page="">
+
+<header class="site-header"></header>
+
+<section class="page-hero" style="padding-bottom:clamp(60px,8vw,120px)">
+  <div class="wrap">
+    <div class="result" id="result">
+      <div class="r-badge" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M4 12.5 L10 18 L20 6" stroke="#000" stroke-width="1.8"/></svg>
+      </div>
+      <p class="kicker no-rule" style="justify-content:center">Order placed</p>
+      <h1 id="r-title">Check your inbox</h1>
+      <p class="r-sub" id="r-sub">Payment instructions are on their way to the email address you provided.</p>
+      <p class="r-status" id="r-status">Awaiting payment</p>
+      <div class="result-card" id="r-card" hidden></div>
+      <p class="r-order" id="r-order"></p>
+      <div class="r-actions">
+        <a class="btn" href="shop.html">Continue shopping <span class="arr">&rarr;</span></a>
+      </div>
+      <p class="r-note" id="r-note">Choose one method from the payment email and include your order number as the reference whenever possible. We&rsquo;ll send a confirmation after payment is received and verified.</p>
+    </div>
+  </div>
+</section>
+
+<footer class="site-footer"></footer>
+
+<script src="assets/js/products.js"></script>
+<script src="assets/js/main.js"></script>
+<script>
+  (function () {
+    var params = new URLSearchParams(location.search);
+    var id = params.get("order");
+    var emailState = params.get("email");
+    var card = document.getElementById("r-card");
+    var orderEl = document.getElementById("r-order");
+    var subEl = document.getElementById("r-sub");
+    var statusEl = document.getElementById("r-status");
+    var noteEl = document.getElementById("r-note");
+
+    if (id) orderEl.textContent = "Order " + id;
+    if (emailState === "delayed") {
+      subEl.textContent = "Your order is safely recorded, but the payment email may be delayed.";
+      statusEl.textContent = "Email delivery delayed";
+      noteEl.innerHTML = 'Please contact <a href="mailto:support@nuvamin.bio" class="inline-link">support@nuvamin.bio</a> with your order number if the message does not arrive shortly.';
+    }
+
+    function usd(n) { return "$" + Number(n).toFixed(2); }
+
+    if (!id) {
+      subEl.textContent = "We couldn't find that order number.";
+      statusEl.style.display = "none";
+      return;
+    }
+
+    var apiBase = window.NUVAMIN_API_BASE || "";
+    fetch(apiBase + "/api/orders/" + encodeURIComponent(id)).then(function (r) {
+      if (!r.ok) throw new Error("not found");
+      return r.json();
+    }).then(function (o) {
+      if (o.status === "paid") {
+        location.replace("confirmation.html?order=" + encodeURIComponent(id));
+        return;
+      }
+      var rows = o.items.map(function (i) {
+        return '<div class="rc-row"><span>' + i.quantity + " × " + i.name + " " + i.mg +
+          '</span><span>' + usd(i.lineTotal) + "</span></div>";
+      }).join("");
+      card.innerHTML = rows +
+        (o.discount ? '<div class="rc-row"><span>Discount' + (o.discountCode ? " (" + o.discountCode + ")" : "") + '</span><span>&minus;' + usd(o.discount) + "</span></div>" : "") +
+        '<div class="rc-row"><span>Shipping</span><span>' + (o.shipping === 0 ? "Free" : usd(o.shipping)) + "</span></div>" +
+        '<div class="rc-row rc-total"><span>Total due</span><span>' + usd(o.total) + "</span></div>";
+      card.hidden = false;
+    }).catch(function () {
+      subEl.textContent = "We couldn't load the order details, but your order number is shown below.";
+    });
+
+    try { localStorage.removeItem("nuvamin-cart"); } catch (e) {}
+    document.querySelectorAll("[data-cart-count]").forEach(function (el) { el.textContent = "0"; });
+  })();
+</script>
+</body>
+</html>

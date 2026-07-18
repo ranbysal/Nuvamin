@@ -1,10 +1,10 @@
 "use strict";
 
 /**
- * Customer email receipt — triggered once, after a payment is CONFIRMED
- * (i.e. from the webhook that flips an order to "paid"), never on the mere
- * return redirect. If SMTP isn't configured it logs the receipt to the
- * console so the trigger is observable in development.
+ * Customer transactional email: invoice instructions after order placement,
+ * then a receipt exactly once after payment is confirmed by the private
+ * Google Sheet (or, when restored, Stripe's signed webhook). If SMTP isn't
+ * configured it logs messages in development so every trigger is observable.
  *
  * The HTML templates are hand-built for email clients: table layout, inline
  * styles, system font stacks, PNG imagery (assets/img/email/) — no webp, no
@@ -151,10 +151,10 @@ function itemRows(order) {
     .join("");
 }
 
-function totalsBlock(order) {
+function totalsBlock(order, totalLabel = "Total paid") {
   const row = (label, value, strong) => `
       <tr>
-        <td style="padding:${strong ? "14px" : "6px"} 0 0;" ${strong ? `style="border-top:2px solid ${INK};"` : ""}>
+        <td style="padding:${strong ? "14px" : "6px"} 0 0;${strong ? `border-top:2px solid ${INK};` : ""}">
           <span style="font-family:${SANS};font-size:${strong ? "13px" : "12px"};letter-spacing:0.14em;text-transform:uppercase;color:${strong ? INK : MUTE};font-weight:${strong ? "700" : "400"};">${label}</span>
         </td>
         <td align="right" style="padding:${strong ? "14px" : "6px"} 0 0;">
@@ -170,7 +170,7 @@ function totalsBlock(order) {
         ${discountRow}
         ${row("Shipping", order.shipping === 0 ? "Free" : money(order.shipping, order.currency))}
         <tr><td colspan="2" style="padding-top:14px;border-bottom:2px solid ${INK};"></td></tr>
-        ${row("Total paid", money(order.total, order.currency), true)}
+        ${row(totalLabel, money(order.total, order.currency), true)}
       </table>`;
 }
 
@@ -201,6 +201,156 @@ function ctaButton(label, url) {
         </tr></table>
       </td></tr>
       </table>`;
+}
+
+function safeHttpUrl(value) {
+  try {
+    const url = new URL(String(value || ""));
+    return url.protocol === "https:" || url.protocol === "http:" ? url.toString() : "";
+  } catch (_err) {
+    return "";
+  }
+}
+
+/** Return only payment methods that have been configured server-side. */
+function configuredPaymentMethods() {
+  const p = config.manualPayments;
+  const methods = [];
+
+  if (p.zelle.recipient) {
+    methods.push({
+      name: "Zelle",
+      detail: p.zelle.recipient,
+      note: p.zelle.accountName ? `Recipient: ${p.zelle.accountName}` : "Use the recipient shown above.",
+      url: "",
+    });
+  }
+
+  const cashUrl = safeHttpUrl(p.cashApp.url);
+  if (p.cashApp.cashtag || cashUrl) {
+    const tag = p.cashApp.cashtag
+      ? (p.cashApp.cashtag.startsWith("$") ? p.cashApp.cashtag : "$" + p.cashApp.cashtag)
+      : "Open Cash App";
+    methods.push({ name: "Cash App", detail: tag, note: "Pay the total due shown above.", url: cashUrl });
+  }
+
+  const paypalUrl = safeHttpUrl(p.paypal.url);
+  if (p.paypal.account || paypalUrl) {
+    methods.push({
+      name: "PayPal",
+      detail: p.paypal.account || "Open PayPal",
+      note: "Pay the total due shown above.",
+      url: paypalUrl,
+    });
+  }
+
+  const cryptoUrl = safeHttpUrl(p.crypto.url);
+  if (p.crypto.address || cryptoUrl) {
+    const label = [p.crypto.currency, p.crypto.network].filter(Boolean).join(" · ") || "Cryptocurrency";
+    methods.push({
+      name: "Crypto",
+      detail: p.crypto.address || "Open secure payment link",
+      note: p.crypto.address
+        ? `Send only ${label} to this address. Network selection must match exactly.`
+        : label,
+      url: cryptoUrl,
+    });
+  }
+
+  return methods;
+}
+
+function paymentMethodsBlock(order, methods) {
+  if (!methods.length) {
+    return `
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+      <tr><td style="padding:28px 0 0;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${CREAM};">
+        <tr><td style="padding:22px 24px;">
+          <p style="margin:0 0 8px;font-family:${SANS};font-size:10px;font-weight:700;letter-spacing:0.26em;color:${MUTE};text-transform:uppercase;">Payment instructions</p>
+          <p style="margin:0;font-family:${SANS};font-size:13px;line-height:1.75;color:${SLATE};">
+            Your order is reserved. Our lab team will send the available payment options shortly. Do not send payment until those instructions arrive.
+          </p>
+        </td></tr></table>
+      </td></tr></table>`;
+  }
+
+  const cards = methods.map((method) => {
+    const action = method.url
+      ? `<p style="margin:15px 0 0;"><a href="${escHtml(method.url)}" style="display:inline-block;background:#000000;padding:12px 20px;font-family:${SANS};font-size:10px;font-weight:700;letter-spacing:0.2em;color:#ffffff;text-decoration:none;text-transform:uppercase;">Pay with ${escHtml(method.name)}</a></p>`
+      : "";
+    return `
+      <tr><td style="padding:20px 22px;border-top:1px solid ${HAIR};">
+        <p style="margin:0 0 7px;font-family:${SANS};font-size:10px;font-weight:700;letter-spacing:0.25em;color:${MUTE};text-transform:uppercase;">${escHtml(method.name)}</p>
+        <p style="margin:0;font-family:${SANS};font-size:14px;font-weight:700;line-height:1.55;color:${INK};word-break:break-word;">${escHtml(method.detail)}</p>
+        <p style="margin:5px 0 0;font-family:${SANS};font-size:11px;line-height:1.65;color:${SLATE};">${escHtml(method.note)}</p>
+        ${action}
+      </td></tr>`;
+  }).join("");
+
+  return `
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+      <tr><td style="padding:28px 0 0;">
+        <p style="margin:0 0 12px;font-family:${SANS};font-size:10px;font-weight:700;letter-spacing:0.26em;color:${MUTE};text-transform:uppercase;">Choose one payment method</p>
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid ${HAIR};">
+          ${cards}
+        </table>
+        <p style="margin:14px 0 0;font-family:${SANS};font-size:11px;line-height:1.7;color:${MUTE};">
+          Include <strong style="color:${INK};">${escHtml(order.id)}</strong> in the payment memo or reference whenever the payment service allows it. Your order is confirmed only after funds are received and verified.
+        </p>
+      </td></tr></table>`;
+}
+
+function renderPaymentRequest(order) {
+  const methods = configuredPaymentMethods();
+  const addr = addressLines(order);
+  const methodText = methods.length
+    ? methods.map((m) => `${m.name}: ${m.detail}${m.note ? ` (${m.note})` : ""}${m.url ? `\n  ${m.url}` : ""}`).join("\n\n")
+    : `Payment options are being finalized. Our lab team will follow up from ${config.email.support}.`;
+  const text =
+    `Your Nuvamin order has been placed.\n\n` +
+    `Order ${order.id}\nStatus: AWAITING PAYMENT\n\n` +
+    order.items.map((i) => `  ${i.quantity} x ${i.name} ${i.mg}  —  ${money(i.lineTotal, order.currency)}`).join("\n") +
+    `\n\nSubtotal: ${money(order.subtotal, order.currency)}\n` +
+    (order.discount ? `Discount${order.discountCode ? ` (${order.discountCode})` : ""}: -${money(order.discount, order.currency)}\n` : "") +
+    `Shipping: ${order.shipping === 0 ? "Free" : money(order.shipping, order.currency)}\n` +
+    `Total due: ${money(order.total, order.currency)}\n\n` +
+    `${methodText}\n\n` +
+    `Include order ${order.id} in the payment memo or reference whenever possible.\n` +
+    `Your order will be confirmed after funds are received and verified.\n\n` +
+    (addr.length ? `Ships to:\n  ${addr.join("\n  ")}\n\n` : "") +
+    `Questions? ${config.email.support}\n\n— Nuvamin`;
+
+  const inner = `
+      ${heroBlock("Order placed", "Complete your", "payment.", "Your order is reserved while we await payment.")}
+      ${orderMetaBlock(order)}
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+      <tr><td style="padding:26px 40px 0;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+          ${itemRows(order)}
+        </table>
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:8px;">
+          <tr><td style="border-top:1px solid ${HAIR};padding-top:16px;">
+            ${totalsBlock(order, "Total due")}
+          </td></tr>
+        </table>
+        ${paymentMethodsBlock(order, methods)}
+        ${shipToBlock(order)}
+      </td></tr>
+      </table>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+      <tr><td align="center" style="padding:28px 40px 46px;">
+        <p style="margin:0;font-family:${SANS};font-size:12px;line-height:1.8;color:${MUTE};">
+          We&rsquo;ll send your order confirmation as soon as payment is verified.
+        </p>
+      </td></tr>
+      </table>`;
+
+  return {
+    text,
+    html: emailShell(inner, `Order ${order.id} placed — payment instructions inside.`),
+    configuredMethods: methods.map((method) => method.name),
+  };
 }
 
 function renderReceipt(order) {
@@ -282,6 +432,51 @@ async function sendReceipt(order) {
     subject: `Your Nuvamin order ${order.id} is confirmed`,
     text,
     html,
+  });
+}
+
+async function sendPaymentRequest(order) {
+  if (!order.customer || !order.customer.email) {
+    console.log(`[email] order ${order.id} has no customer email — payment request skipped`);
+    return { sent: false, reason: "no-email" };
+  }
+  const { text, html, configuredMethods } = renderPaymentRequest(order);
+  const result = await deliver({
+    to: order.customer.email,
+    subject: `Payment instructions for Nuvamin order ${order.id}`,
+    text,
+    html,
+  });
+  return Object.assign(result, { configuredMethods });
+}
+
+async function sendOrderPlacedNotification(order) {
+  const addr = addressLines(order);
+  const lines = order.items
+    .map((i) => `  ${i.quantity} x ${i.name} ${i.mg}  —  ${money(i.lineTotal, order.currency)}`)
+    .join("\n");
+  const text =
+    `New order awaiting payment.\n\n` +
+    `Order:    ${order.id}\n` +
+    `Placed:   ${order.createdAt}\n` +
+    `Customer: ${order.customer.name || "—"} <${order.customer.email}>\n\n` +
+    `${lines}\n\nTotal due: ${money(order.total, order.currency)}\n\n` +
+    (addr.length ? `Ship to:\n  ${addr.join("\n  ")}\n\n` : "") +
+    `Verify the incoming payment, enter its method/reference in the Nuvamin Orders sheet, then tick "Payment confirmed".`;
+  const html =
+    `<div style="font-family:Arial,Helvetica,sans-serif;max-width:560px;color:#111">` +
+    `<h2 style="letter-spacing:.14em">NUVAMIN — order awaiting payment</h2>` +
+    `<p><strong>${escHtml(order.id)}</strong> &middot; ${escHtml(order.createdAt)}</p>` +
+    `<p>Customer: ${escHtml(order.customer.name || "—")} &lt;${escHtml(order.customer.email)}&gt;</p>` +
+    `<p><strong>Total due: ${money(order.total, order.currency)}</strong></p>` +
+    `<p>Verify the incoming payment, enter its method/reference in the <strong>Nuvamin Orders</strong> sheet, then tick <em>Payment confirmed</em>.</p>` +
+    `</div>`;
+  return deliver({
+    to: config.email.orderNotify,
+    subject: `Order ${order.id} — ${money(order.total, order.currency)} awaiting payment`,
+    text,
+    html,
+    replyTo: order.customer.email || undefined,
   });
 }
 
@@ -368,4 +563,13 @@ async function sendContactMessage({ name, email, institution, topic, message }) 
   });
 }
 
-module.exports = { sendReceipt, renderReceipt, sendOrderNotification, sendContactMessage };
+module.exports = {
+  sendPaymentRequest,
+  renderPaymentRequest,
+  sendReceipt,
+  renderReceipt,
+  sendOrderPlacedNotification,
+  sendOrderNotification,
+  sendContactMessage,
+  configuredPaymentMethods,
+};

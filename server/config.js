@@ -42,6 +42,11 @@ const config = {
   onVercel: ON_VERCEL,
   isProduction: IS_PRODUCTION,
 
+  // "invoice" (default) creates an order and emails manual payment
+  // instructions. "stripe" restores the hosted Stripe Checkout flow without
+  // requiring any code changes.
+  checkoutMode: (env.CHECKOUT_MODE || "invoice").toLowerCase(),
+
   // "stripe" | "mock". Mock is restricted to non-production environments.
   provider: (env.PAYMENT_PROVIDER || "mock").toLowerCase(),
 
@@ -70,6 +75,30 @@ const config = {
     checkoutUrl: env.STRIPE_CHECKOUT_URL || "https://api.stripe.com/v1/checkout/sessions",
     secretKey: env.STRIPE_SECRET_KEY || "",
     webhookSecret: env.STRIPE_WEBHOOK_SECRET || "",
+  },
+
+  // Manual-invoice destinations. Empty methods are omitted from the customer
+  // email, which lets these values be added safely in Vercel later without
+  // committing account details to the repository.
+  manualPayments: {
+    zelle: {
+      recipient: env.ZELLE_RECIPIENT || "",
+      accountName: env.ZELLE_ACCOUNT_NAME || "",
+    },
+    cashApp: {
+      cashtag: env.CASHAPP_CASHTAG || "",
+      url: env.CASHAPP_PAYMENT_URL || "",
+    },
+    paypal: {
+      account: env.PAYPAL_ACCOUNT || "",
+      url: env.PAYPAL_PAYMENT_URL || "",
+    },
+    crypto: {
+      currency: env.CRYPTO_CURRENCY || "",
+      network: env.CRYPTO_NETWORK || "",
+      address: env.CRYPTO_WALLET_ADDRESS || "",
+      url: env.CRYPTO_PAYMENT_URL || "",
+    },
   },
 
   email: {

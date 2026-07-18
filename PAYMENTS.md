@@ -1,139 +1,126 @@
-# Nuvamin — Checkout & Payments
+# Nuvamin — Orders & Payments
 
-A **redirect-based Stripe Checkout** integration. Card data is entered only on
-Stripe's hosted page — **this site never sees, handles, or stores card
-details**. A mock adapter remains available strictly for local development and
-non-production previews.
+Nuvamin currently uses an **invoice-first, manually verified payment flow**.
+Stripe Checkout remains implemented but inactive. No payment account details
+are committed to GitHub; invoice destinations are read from server-only Vercel
+environment variables.
 
-## Architecture
+## Active flow
 
-```
+```text
 Browser (cart.html)
-   │  POST /api/checkout   { cart, customer.email, shipping address }
-   ▼
-Server  ── prices order from server-side catalog (client price is never trusted)
-        ── validates email + shipping address server-side
-        ── creates a PENDING order   (backend order creation BEFORE payment)
-        ── gateway.createCheckoutSession(order)   →  { redirectUrl }
-   │  302 redirect
-   ▼
-Stripe Checkout (or the built-in mock outside production)
-   │  customer pays  →  gateway redirects back  +  sends signed webhook
-   ├──────────────► GET /checkout/success → confirmation.html (polls status)
-   ├──────────────► GET /checkout/cancel  → failed.html (retry)
-   └──POST /api/webhook/payment  (SIGNED — the source of truth) ─► mark PAID,
-                                                                   email receipt
+  │  POST /api/checkout {cart, email, shipping, requestId}
+  ▼
+Server
+  ├─ reprices from the server catalogue
+  ├─ validates contact and shipping details
+  ├─ creates an AWAITING PAYMENT order in Redis
+  ├─ emails the customer payment instructions
+  ├─ emails the company an awaiting-payment alert
+  └─ posts the order to the private Google Sheet
+  │
+  ▼
+order-placed.html — "Check your inbox"
+
+Team verifies external funds
+  │  Google Sheet: choose method/reference → Payment confirmed ✓
+  │  POST /api/orders/:id/confirm-payment {shared secret}
+  ▼
+Server marks PAID → sends "Good things are coming" confirmation
+
+Team packs order
+  │  Google Sheet: carrier + tracking → Fulfilled ✓
+  ▼
+Apps Script sends "It's on the way" email + Track Package link
 ```
 
-### Order status model
+## Order states
 
 `pending → paid | failed | cancelled | refunded`
 
-Transitions are **enforced** (`server/orders.js`): `pending` can move to
-`paid/failed/cancelled`; `failed` and `cancelled` can still move to `paid`
-(a retry or a late authoritative webhook); `paid` only ever moves to
-`refunded`. A replayed or out-of-order webhook can never downgrade a paid
-order, and the receipt sends exactly once — on the transition that applied.
+For invoice orders, `pending` means **awaiting payment**. The Google Sheet's
+Payment confirmed action is the authoritative paid transition. The endpoint is
+protected by `SHEETS_WEBHOOK_SECRET`, validates that the order belongs to the
+manual-invoice flow, and is idempotent. A completed action cannot resend the
+customer receipt.
 
-The **webhook is authoritative** for `paid`. The browser return URL only shows a
-confirmation page that polls order status — a customer who closes the tab still
-gets marked paid by the webhook, and the receipt still sends.
+Stripe retains its signed webhook and legal state transitions for future use.
+Paid orders can never be downgraded by late/replayed events.
 
-### Order storage
+## Payment destinations
 
-`ORDER_STORE=file` (default locally) keeps orders in `server/data/orders.json`.
-`ORDER_STORE=redis` uses Upstash Redis (`UPSTASH_REDIS_REST_URL/TOKEN` — the
-Vercel Upstash integration injects them, and the store then defaults to redis
-automatically). On Vercel the file store refuses to boot: the serverless
-filesystem is ephemeral. The public `GET /api/orders/:id` endpoint returns a
-safe projection only — never the shipping address or internal event log.
+Configure any combination in Vercel Production and redeploy:
 
-## Files
+| Method | Variables |
+| --- | --- |
+| Zelle | `ZELLE_RECIPIENT`, optional `ZELLE_ACCOUNT_NAME` |
+| Cash App | `CASHAPP_CASHTAG`, optional `CASHAPP_PAYMENT_URL` |
+| PayPal | `PAYPAL_ACCOUNT`, optional `PAYPAL_PAYMENT_URL` |
+| Crypto | `CRYPTO_CURRENCY`, `CRYPTO_NETWORK`, `CRYPTO_WALLET_ADDRESS`, optional `CRYPTO_PAYMENT_URL` |
+
+Only configured methods appear. When every destination is blank, the email
+safely tells the customer that the lab will follow up; it never renders
+placeholder account data. For crypto, the configured currency and network are
+shown explicitly.
+
+## Google Sheet
+
+Every placed order appears as **AWAITING PAYMENT**. The operational sequence is:
+
+1. Verify funds outside Nuvamin.
+2. Select Zelle, Cash App, PayPal, Crypto or Other.
+3. Enter a provider reference or transaction hash when available.
+4. Tick **Payment confirmed ✓**. The row becomes **PAID — TO FULFIL** and the
+   customer receives the designed confirmation email.
+5. Enter tracking and choose UPS, USPS, FedEx or DHL.
+6. Tick **Fulfilled ✓**. The row becomes **SHIPPED ✓** and the customer receives
+   the shipping email with a working carrier link.
+
+The server probes the Apps Script's version-2 capabilities before accepting an
+invoice order. This intentionally fails closed if the deployed Sheet script is
+still the previous paid-only version, preventing unpaid orders from being
+mistaken for ready-to-fulfil orders.
+
+Setup and migration instructions: [GOOGLE-WORKSPACE-SETUP.md](GOOGLE-WORKSPACE-SETUP.md).
+
+## Stripe retained but inactive
+
+`CHECKOUT_MODE=invoice` is the default and does not construct or call the
+Stripe gateway. Existing Stripe source, credentials, return routes and signed
+webhook handling remain intact.
+
+To restore Stripe later:
+
+1. Set `CHECKOUT_MODE=stripe` and `PAYMENT_PROVIDER=stripe` in Vercel.
+2. Ensure `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` are configured.
+3. Ensure the Stripe webhook targets `/api/webhook/payment`.
+4. Redeploy and complete a test-mode checkout before enabling live payments.
+
+The mock gateway remains restricted to non-production and is available only
+when `CHECKOUT_MODE=stripe` and `PAYMENT_PROVIDER=mock`.
+
+## Reliability and security
+
+- Server-side catalogue pricing; browser totals are never trusted.
+- Redis-backed orders on Vercel.
+- Per-attempt request IDs prevent duplicate orders after network retries.
+- Customer card/bank/wallet credentials are never collected by Nuvamin.
+- Payment destinations stay in server-only environment variables.
+- Sheet confirmation requires a timing-safe shared-secret comparison.
+- Customer-facing order status exposes no email or shipping address.
+- Confirmation and paid-order notifications have stored send-once flags.
+- Sheet insertion rejects duplicate order IDs.
+- Fulfilment requires confirmed payment, tracking and a supported carrier.
+
+## Relevant files
 
 | Path | Purpose |
 | --- | --- |
-| `server/app.js` | Express app: routes, validation, rate limiting, static hosting (allowlisted) |
-| `server/config.js` | Env loader + typed config (all credentials via env) |
-| `server/catalog.js` | Authoritative server-side prices |
-| `server/orders.js` | Order model + enforced status lifecycle + file/redis store drivers |
-| `server/sheets.js` | Google Sheets order log (posts each paid order to the client's sheet) |
-| `server/views.js` | Server-rendered markup for the mock hosted payment page |
-| `api/index.js` | Vercel serverless entry (exports the Express app) |
-| `vercel.json` | Vercel routing: API → function, pages/assets → CDN, nothing else exposed |
-| `server/email.js` | Customer receipts, new-order notifications, contact-form delivery (SMTP, or console in dev) |
-| `server/gateway/base.js` | The `PaymentGateway` adapter contract |
-| `server/gateway/stripe.js` | Stripe Checkout session creation + webhook verification |
-| `server/gateway/mock.js` | Built-in simulated hosted gateway (dev/testing) |
-| `server/gateway/index.js` | Factory — selects adapter from `PAYMENT_PROVIDER` |
-| `cart.html` | Cart review + checkout button (→ `/api/checkout`) |
-| `confirmation.html` | Success page (polls until `paid`) |
-| `failed.html` | Failure/cancel page with **retry** button |
-
-## Routes
-
-| Method & path | Role |
-| --- | --- |
-| `POST /api/checkout` | Create pending order + hosted session → `{ redirectUrl }` |
-| `GET /checkout/success` | Gateway success return → confirmation page |
-| `GET /checkout/cancel` | Gateway cancel return → failed page |
-| `POST /api/webhook/payment` | **Signed** webhook — authoritative status update |
-| `GET /api/orders/:id` | Public order status (for the confirmation page) |
-| `GET /admin/orders` | Admin-readable order records (`Authorization: Bearer <ADMIN_TOKEN>`) |
-| `POST /api/contact` | Contact form → company inbox (validated + rate-limited) |
-
-## Run locally
-
-```sh
-npm install
-cp .env.example .env          # defaults to PAYMENT_PROVIDER=mock
-npm start                     # serves the whole site + API on :3000
-```
-
-Open `http://localhost:3000`, add items, go to **Cart → Checkout**. With the
-`mock` provider you get a built-in simulated hosted page (Pay / Decline /
-Cancel) so the entire lifecycle — including the emailed receipt (printed to the
-console in dev) and the admin record — is testable with **no real credentials**.
-
-Admin records:
-```sh
-curl -H "Authorization: Bearer <ADMIN_TOKEN>" http://localhost:3000/admin/orders
-```
-
-## Going live with Stripe
-
-1. In Vercel Production, set `PAYMENT_PROVIDER=stripe`.
-2. Add `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` from the approved Stripe
-   account. `STRIPE_CHECKOUT_URL` normally uses the default in `.env.example`.
-3. Set `PUBLIC_BASE_URL=https://nuvamin.bio` so return and webhook URLs use the
-   production domain.
-4. In the Stripe Dashboard, register
-   `https://nuvamin.bio/api/webhook/payment` and subscribe it to the Checkout,
-   PaymentIntent, expiration, and refund events handled by
-   `server/gateway/stripe.js`.
-5. Redeploy, then confirm `/api/health` reports `provider: "stripe"` and run a
-   test-mode Checkout before enabling live mode.
-6. Set a strong `ADMIN_TOKEN` and configure SMTP (`SMTP_*`) for real receipts.
-
-## Security posture
-
-- **Fail-fast provider selection** — Stripe without complete credentials and
-  the mock provider in production both refuse to construct. There is no
-  production override for the mock. `/mock-hosted` routes are mounted only
-  outside production when the mock provider is active.
-- **Static allowlist** — the Express host serves only pages, `assets/` and SEO
-  files. `server/`, order data, `package.json`, docs and dotfiles are never
-  reachable over HTTP (Vercel's routing enforces the same boundary).
-- **Webhook signatures** verified with a constant-time HMAC compare; the admin
-  token uses `crypto.timingSafeEqual` too.
-- **Input hardening** — server-side email + shipping-address validation, 32 kb
-  body cap, and per-IP rate limiting on `POST /api/checkout`.
-- All dynamic values in the mock hosted page are HTML-escaped.
-
-## Notes & production hardening
-
-- Use `ORDER_STORE=redis` (Upstash) for production — see README's Vercel
-  section. The file store is for local development / single-host demos.
-- If the storefront is hosted separately from the API, set
-  `window.NUVAMIN_API_BASE = "https://api.yourdomain.com"` before the page
-  scripts, and the checkout/confirmation calls will target that origin.
-- Never commit `.env`. Only `.env.example` (placeholders) is in the repo.
+| `cart.html` | Delivery form and Place order action |
+| `order-placed.html` | Awaiting-payment result page |
+| `server/app.js` | Order creation, Sheet confirmation and retained Stripe routes |
+| `server/email.js` | Payment request, paid confirmation and company notifications |
+| `server/orders.js` | Redis/file order model and enforced lifecycle |
+| `server/sheets.js` | Sheet capability check and placed-order logging |
+| `google/nuvamin-orders.gs` | Payment confirmation and tracked fulfilment actions |
+| `server/gateway/stripe.js` | Inactive retained Stripe Checkout adapter |

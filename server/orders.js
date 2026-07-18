@@ -193,7 +193,7 @@ function genId() {
  * Create a pending order from priced totals + customer contact & shipping.
  * This is the "backend order creation before payment" step.
  */
-async function createOrder({ pricing, customer, shipping, currency }) {
+async function createOrder({ pricing, customer, shipping, currency, requestId }) {
   const now = new Date().toISOString();
   const order = {
     id: genId(),
@@ -221,11 +221,18 @@ async function createOrder({ pricing, customer, shipping, currency }) {
       : null,
     payment: {
       provider: null,
+      method: null,
       sessionId: null,
       transactionId: null,
       last4: null, // gateway-supplied display only; NEVER a full PAN
     },
+    requestId: requestId || "",
+    invoiceSent: false,
+    orderPlacedNotificationSent: false,
     receiptSent: false,
+    paidNotificationSent: false,
+    sheetLogged: false,
+    paidAt: null,
     createdAt: now,
     updatedAt: now,
     events: [{ at: now, type: "created", status: STATUS.PENDING }],
@@ -237,6 +244,11 @@ async function createOrder({ pricing, customer, shipping, currency }) {
 async function getOrder(id) {
   if (!id) return null;
   return getDriver().get(id);
+}
+
+async function findByRequestId(requestId) {
+  if (!requestId) return null;
+  return (await getDriver().list()).find((o) => o.requestId === requestId) || null;
 }
 
 async function updateOrder(id, mutator, eventType) {
@@ -272,6 +284,7 @@ async function setStatus(id, status, patch, eventType) {
     (o) => {
       o.status = status;
       if (patch) Object.assign(o.payment, patch);
+      if (status === STATUS.PAID && !o.paidAt) o.paidAt = new Date().toISOString();
     },
     eventType || "status:" + status
   );
@@ -287,6 +300,7 @@ module.exports = {
   STATUS,
   createOrder,
   getOrder,
+  findByRequestId,
   updateOrder,
   setStatus,
   listOrders,

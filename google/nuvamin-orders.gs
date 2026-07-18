@@ -6,9 +6,10 @@
  * once (Run ▶ with "setup" selected) and authorize it.
  *
  * What it does:
- *   • Receives one row per PAID order from the website (doPost).
- *   • Formats the sheet as a fulfilment board: status colours, a
- *     "Fulfilled" checkbox, tracking + carrier columns.
+ *   • Receives every PLACED order from the website (doPost).
+ *   • Formats the sheet as a payment + fulfilment board.
+ *   • "Payment confirmed" securely marks the order paid in Nuvamin and
+ *     triggers the designed customer order-confirmation email.
  *   • When a team member ticks "Fulfilled", the customer instantly
  *     receives a designed "Your order is on the way" email — sent
  *     from THIS Google account's Gmail — including the tracking
@@ -29,27 +30,56 @@ var SHEET_NAME = "Orders";
 /* Column layout (1-based) */
 var COL = {
   ORDER: 1, PLACED: 2, STATUS: 3, CUSTOMER: 4, EMAIL: 5, ITEMS: 6,
-  SHIP_TO: 7, TOTAL: 8, FULFILLED: 9, TRACKING: 10, CARRIER: 11,
-  SHIPPED_AT: 12, TXN: 13, DATA: 14
+  SHIP_TO: 7, TOTAL: 8, PAYMENT_CONFIRMED: 9, PAYMENT_METHOD: 10,
+  PAYMENT_REFERENCE: 11, PAID_AT: 12, FULFILLED: 13, TRACKING: 14,
+  CARRIER: 15, SHIPPED_AT: 16, TXN: 17, DATA: 18
 };
 var HEADERS = [
   "Order", "Placed", "Status", "Customer", "Email", "Items",
-  "Ship to", "Total", "Fulfilled ✓", "Tracking #", "Carrier",
-  "Shipped at", "Txn", "Data"
+  "Ship to", "Total", "Payment confirmed ✓", "Payment method",
+  "Payment reference", "Paid at", "Fulfilled ✓", "Tracking #",
+  "Carrier", "Shipped at", "Txn", "Data"
 ];
 
-var STATUS_NEW = "NEW — TO FULFIL";
+var STATUS_AWAITING = "AWAITING PAYMENT";
+var STATUS_PAID = "PAID — TO FULFIL";
 var STATUS_SHIPPED = "SHIPPED ✓";
-var BG_NEW = "#FFF8E1";
+var BG_AWAITING = "#FFF8E1";
+var BG_PAID = "#E3F2FD";
 var BG_SHIPPED = "#E8F5E9";
 
 /* ====================== ONE-TIME SETUP ========================== */
 
 /** Run this once after pasting the script. Formats the board and
- *  installs the fulfilment trigger. Safe to re-run any time. */
+ *  installs the payment/fulfilment trigger. Safe to re-run any time. */
 function setup() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName(SHEET_NAME) || ss.getSheets()[0].setName(SHEET_NAME);
+  if (sheet.getMaxRows() < 2001) {
+    sheet.insertRowsAfter(sheet.getMaxRows(), 2001 - sheet.getMaxRows());
+  }
+
+  // Older versions started with the Fulfilled checkbox in column 9 because
+  // rows arrived only after Stripe payment. Insert the four new payment
+  // columns without disturbing any existing orders, tracking, or hidden data.
+  if (String(sheet.getRange(1, 9).getValue()) === "Fulfilled ✓") {
+    sheet.insertColumnsBefore(9, 4);
+    var legacyLast = sheet.getLastRow();
+    for (var legacyRow = 2; legacyRow <= legacyLast; legacyRow++) {
+      if (!sheet.getRange(legacyRow, COL.ORDER).getValue()) continue;
+      var legacyData = {};
+      try { legacyData = JSON.parse(String(sheet.getRange(legacyRow, COL.DATA).getValue() || "{}")); } catch (err) {}
+      sheet.getRange(legacyRow, COL.PAYMENT_CONFIRMED).setValue(true);
+      sheet.getRange(legacyRow, COL.PAYMENT_METHOD).setValue(legacyData.provider || "Stripe / legacy");
+      sheet.getRange(legacyRow, COL.PAYMENT_REFERENCE).setValue(
+        legacyData.transactionId || sheet.getRange(legacyRow, COL.TXN).getValue() || ""
+      );
+      sheet.getRange(legacyRow, COL.PAID_AT).setValue(sheet.getRange(legacyRow, COL.PLACED).getValue());
+      if (String(sheet.getRange(legacyRow, COL.STATUS).getValue()) === "NEW — TO FULFIL") {
+        sheet.getRange(legacyRow, COL.STATUS).setValue(STATUS_PAID).setBackground(BG_PAID);
+      }
+    }
+  }
 
   // headers
   var head = sheet.getRange(1, 1, 1, HEADERS.length);
@@ -60,26 +90,37 @@ function setup() {
   sheet.setRowHeight(1, 34);
 
   // column widths + wrapping
-  var widths = [150, 130, 130, 140, 200, 220, 220, 70, 80, 150, 90, 130, 120, 40];
+  var widths = [150, 130, 145, 140, 200, 220, 220, 80, 105, 120, 150, 130, 80, 150, 90, 130, 120, 40];
   for (var c = 0; c < widths.length; c++) sheet.setColumnWidth(c + 1, widths[c]);
   sheet.getRange(2, COL.ITEMS, 2000, 1).setWrap(true);
   sheet.getRange(2, COL.SHIP_TO, 2000, 1).setWrap(true);
 
-  // "Fulfilled" checkboxes
+  // Payment and fulfilment controls.
   var box = SpreadsheetApp.newDataValidation().requireCheckbox().build();
+  sheet.getRange(2, COL.PAYMENT_CONFIRMED, 2000, 1).setDataValidation(box);
   sheet.getRange(2, COL.FULFILLED, 2000, 1).setDataValidation(box);
+  var methodRule = SpreadsheetApp.newDataValidation()
+    .requireValueInList(["Zelle", "Cash App", "PayPal", "Crypto", "Other", "Stripe / legacy"], true)
+    .setAllowInvalid(false).build();
+  sheet.getRange(2, COL.PAYMENT_METHOD, 2000, 1).setDataValidation(methodRule);
+  var carrierRule = SpreadsheetApp.newDataValidation()
+    .requireValueInList(["UPS", "USPS", "FedEx", "DHL"], true)
+    .setAllowInvalid(false).build();
+  sheet.getRange(2, COL.CARRIER, 2000, 1).setDataValidation(carrierRule);
 
   // hide the machine-readable data column
   sheet.hideColumns(COL.DATA);
 
-  // install the fulfilment trigger (replacing any existing copy)
+  // Install the payment + fulfilment trigger (replacing older copies).
   ScriptApp.getProjectTriggers().forEach(function (t) {
-    if (t.getHandlerFunction() === "onEditFulfil") ScriptApp.deleteTrigger(t);
+    if (t.getHandlerFunction() === "onEditFulfil" || t.getHandlerFunction() === "onEditOrder") {
+      ScriptApp.deleteTrigger(t);
+    }
   });
-  ScriptApp.newTrigger("onEditFulfil").forSpreadsheet(ss).onEdit().create();
+  ScriptApp.newTrigger("onEditOrder").forSpreadsheet(ss).onEdit().create();
 
   SpreadsheetApp.getUi().alert(
-    "Nuvamin orders board is ready.\n\n" +
+    "Nuvamin payment + fulfilment board is ready.\n\n" +
     "Next: Deploy → New deployment → Web app (execute as Me, access: Anyone), " +
     "then put the web-app URL + your SECRET into Vercel as SHEETS_WEBHOOK_URL / SHEETS_WEBHOOK_SECRET."
   );
@@ -92,6 +133,13 @@ function doPost(e) {
   if (body.secret !== SECRET) {
     return ContentService.createTextOutput("forbidden").setMimeType(ContentService.MimeType.TEXT);
   }
+  if (body.action === "capabilities") {
+    return ContentService.createTextOutput(JSON.stringify({
+      ok: true,
+      version: 2,
+      capabilities: ["pending_orders", "confirm_payment", "tracked_fulfilment"]
+    })).setMimeType(ContentService.MimeType.JSON);
+  }
   var lock = LockService.getScriptLock();
   lock.waitLock(10000);
   try {
@@ -100,15 +148,28 @@ function doPost(e) {
     if (sheet.getLastRow() === 0) sheet.getRange(1, 1, 1, HEADERS.length).setValues([HEADERS]);
 
     var r = body.row;
+    if (!r || !r.orderId) {
+      return ContentService.createTextOutput(JSON.stringify({ ok: false, error: "missing order" }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    if (sheet.getLastRow() > 1) {
+      var existing = sheet.getRange(2, COL.ORDER, sheet.getLastRow() - 1, 1)
+        .createTextFinder(String(r.orderId)).matchEntireCell(true).findNext();
+      if (existing) {
+        return ContentService.createTextOutput(JSON.stringify({ ok: true, duplicate: true }))
+          .setMimeType(ContentService.MimeType.JSON);
+      }
+    }
     var placed = r.placedAt ? Utilities.formatDate(new Date(r.placedAt), Session.getScriptTimeZone(), "MMM d, yyyy HH:mm") : "";
     var rowIdx = sheet.getLastRow() + 1;
     sheet.getRange(rowIdx, 1, 1, HEADERS.length).setValues([[
-      r.orderId, placed, STATUS_NEW, r.customerName, r.customerEmail,
-      r.items, r.address, Number(r.total), false, "", "", "", r.transactionId,
-      JSON.stringify(r)
+      r.orderId, placed, STATUS_AWAITING, r.customerName, r.customerEmail,
+      r.items, r.address, Number(r.total), false, "", "", "", false,
+      "", "", "", r.transactionId || "", JSON.stringify(r)
     ]]);
-    sheet.getRange(rowIdx, COL.STATUS).setBackground(BG_NEW).setFontWeight("bold");
+    sheet.getRange(rowIdx, COL.STATUS).setBackground(BG_AWAITING).setFontWeight("bold");
     sheet.getRange(rowIdx, COL.TOTAL).setNumberFormat(r.currency === "USD" ? "$#,##0.00" : "#,##0.00");
+    sheet.getRange(rowIdx, COL.PAYMENT_CONFIRMED).insertCheckboxes();
     sheet.getRange(rowIdx, COL.FULFILLED).insertCheckboxes();
 
     return ContentService.createTextOutput(JSON.stringify({ ok: true }))
@@ -118,44 +179,134 @@ function doPost(e) {
   }
 }
 
-/* ================= FULFILMENT (checkbox ticked) ================== */
+/* ================= PAYMENT + FULFILMENT ACTIONS ================== */
 
-/** Installable trigger (created by setup). When "Fulfilled" is ticked:
- *  emails the customer their shipping confirmation, stamps the row. */
-function onEditFulfil(e) {
+function onEditOrder(e) {
   var range = e.range;
   var sheet = range.getSheet();
   if (sheet.getName() !== SHEET_NAME) return;
-  if (range.getColumn() !== COL.FULFILLED || range.getNumRows() !== 1) return;
-  var row = range.getRow();
-  if (row < 2) return;
-  if (e.value !== "TRUE" && e.value !== true) return;                 // only on tick
-  if (sheet.getRange(row, COL.SHIPPED_AT).getValue()) return;          // already shipped
+  if (range.getNumRows() !== 1 || range.getRow() < 2) return;
+  if (e.value !== "TRUE" && e.value !== true) return;
+  if (range.getColumn() === COL.PAYMENT_CONFIRMED) confirmPayment(sheet, range.getRow());
+  if (range.getColumn() === COL.FULFILLED) fulfilOrder(sheet, range.getRow());
+}
 
-  var get = function (c) { return String(sheet.getRange(row, c).getValue() || ""); };
-  var email = get(COL.EMAIL);
-  if (!email) {
-    SpreadsheetApp.getActiveSpreadsheet().toast("No customer email on row " + row, "Nuvamin", 6);
+function cellText(sheet, row, col) {
+  return String(sheet.getRange(row, col).getValue() || "");
+}
+
+function toast(message, title) {
+  SpreadsheetApp.getActiveSpreadsheet().toast(message, title || "Nuvamin", 7);
+}
+
+function readRowData(sheet, row) {
+  try { return JSON.parse(cellText(sheet, row, COL.DATA) || "{}"); } catch (err) { return {}; }
+}
+
+function writeRowData(sheet, row, data) {
+  sheet.getRange(row, COL.DATA).setValue(JSON.stringify(data || {}));
+}
+
+function confirmPayment(sheet, row) {
+  if (sheet.getRange(row, COL.PAID_AT).getValue()) return;
+  var method = cellText(sheet, row, COL.PAYMENT_METHOD).trim();
+  if (!method) {
+    sheet.getRange(row, COL.PAYMENT_CONFIRMED).setValue(false);
+    toast("Choose the verified payment method before confirming payment.", "Payment not confirmed");
     return;
   }
 
-  var data = {};
-  try { data = JSON.parse(get(COL.DATA) || "{}"); } catch (err) {}
+  var data = readRowData(sheet, row);
+  var orderId = data.orderId || cellText(sheet, row, COL.ORDER);
+  var reference = cellText(sheet, row, COL.PAYMENT_REFERENCE).trim();
+  var response;
+  try {
+    response = UrlFetchApp.fetch(SITE + "/api/orders/" + encodeURIComponent(orderId) + "/confirm-payment", {
+      method: "post",
+      contentType: "application/json",
+      payload: JSON.stringify({
+        secret: SECRET,
+        paymentMethod: method,
+        paymentReference: reference
+      }),
+      muteHttpExceptions: true
+    });
+  } catch (err) {
+    sheet.getRange(row, COL.PAYMENT_CONFIRMED).setValue(false);
+    toast("Could not reach Nuvamin: " + err, "Payment not confirmed");
+    return;
+  }
+
+  var result = {};
+  try { result = JSON.parse(response.getContentText() || "{}"); } catch (err2) {}
+  if (response.getResponseCode() < 200 || response.getResponseCode() >= 300 || !result.ok) {
+    sheet.getRange(row, COL.PAYMENT_CONFIRMED).setValue(false);
+    toast(result.error || "The confirmation email could not be sent. Try again.", "Payment not confirmed");
+    return;
+  }
+
+  var now = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "MMM d, yyyy HH:mm");
+  sheet.getRange(row, COL.PAID_AT).setValue(now);
+  sheet.getRange(row, COL.STATUS).setValue(STATUS_PAID).setBackground(BG_PAID);
+  sheet.getRange(row, COL.TXN).setValue(reference);
+  data.status = "paid";
+  data.paidAt = now;
+  data.paymentMethod = method;
+  data.transactionId = reference;
+  writeRowData(sheet, row, data);
+  toast("Payment recorded and confirmation email sent.", "Order " + orderId);
+}
+
+/** When Fulfilled is ticked, require a paid order and trackable shipment,
+ * then email the customer and stamp the row. */
+function fulfilOrder(sheet, row) {
+  if (sheet.getRange(row, COL.SHIPPED_AT).getValue()) return;
+  if (sheet.getRange(row, COL.PAYMENT_CONFIRMED).getValue() !== true || !sheet.getRange(row, COL.PAID_AT).getValue()) {
+    sheet.getRange(row, COL.FULFILLED).setValue(false);
+    toast("Confirm payment before marking this order fulfilled.", "Order not shipped");
+    return;
+  }
+
+  var get = function (c) { return cellText(sheet, row, c); };
+  var email = get(COL.EMAIL);
+  if (!email) {
+    sheet.getRange(row, COL.FULFILLED).setValue(false);
+    toast("No customer email on row " + row, "Order not shipped");
+    return;
+  }
+
+  var data = readRowData(sheet, row);
   var orderId = data.orderId || get(COL.ORDER);
   var tracking = get(COL.TRACKING).trim();
   var carrier = get(COL.CARRIER).trim();
+  if (!tracking || !carrier || !trackingUrl(carrier, tracking)) {
+    sheet.getRange(row, COL.FULFILLED).setValue(false);
+    toast("Enter a tracking number and choose UPS, USPS, FedEx, or DHL first.", "Order not shipped");
+    return;
+  }
 
   var mail = buildShippedEmail(data, orderId, get(COL.CUSTOMER), get(COL.SHIP_TO), tracking, carrier);
-  GmailApp.sendEmail(email, mail.subject, mail.text, {
-    htmlBody: mail.html,
-    name: SHOP_NAME,
-    replyTo: SUPPORT_EMAIL
-  });
+  try {
+    GmailApp.sendEmail(email, mail.subject, mail.text, {
+      htmlBody: mail.html,
+      name: SHOP_NAME,
+      replyTo: SUPPORT_EMAIL
+    });
+  } catch (err3) {
+    sheet.getRange(row, COL.FULFILLED).setValue(false);
+    toast("Shipping email failed: " + err3, "Order not shipped");
+    return;
+  }
 
   var now = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "MMM d, yyyy HH:mm");
   sheet.getRange(row, COL.SHIPPED_AT).setValue(now);
   sheet.getRange(row, COL.STATUS).setValue(STATUS_SHIPPED).setBackground(BG_SHIPPED);
-  SpreadsheetApp.getActiveSpreadsheet().toast("Shipping email sent to " + email, "Order " + orderId, 6);
+  data.status = "shipped";
+  data.shippedAt = now;
+  data.tracking = tracking;
+  data.carrier = carrier;
+  writeRowData(sheet, row, data);
+  toast("Shipping email sent to " + email, "Order " + orderId);
 }
 
 /* ==================== SHIPPED EMAIL TEMPLATE ===================== */
