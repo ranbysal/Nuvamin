@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Certificate of Analysis — Nuvamin</title>
-<meta name="description" content="Nuvamin lot certificate of analysis (specimen).">
+<title>Certificate of Analysis | Nuvamin</title>
+<meta name="description" content="Nuvamin lot certificate of analysis.">
 <meta name="robots" content="noindex">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23000000'/%3E%3Ctext x='16' y='22' text-anchor='middle' font-family='Arial' font-size='17' fill='%23FFFFFF'%3EN%3C/text%3E%3C/svg%3E">
 <link rel="stylesheet" href="assets/css/style.css">
@@ -32,19 +32,19 @@
     var p = nvFindProduct(new URLSearchParams(location.search).get("id"));
     if (!p) { location.replace("shop.html"); return; }
     var fam = nvFamily(p);
-    document.title = "Certificate of Analysis — " + p.name + " · Lot " + p.lot + " — Nuvamin";
+    document.title = "Certificate of Analysis: " + p.name + ", Lot " + p.lot + " | Nuvamin";
     document.getElementById("coa-back").href = "product.html?id=" + p.id;
 
     function spec(k) {
       for (var i = 0; i < p.specs.length; i++) if (p.specs[i].k === k) return p.specs[i].v;
       return "";
     }
-    // Deterministic per-lot "results" so the specimen reads consistently.
+    // Deterministic per-lot results so the certificate reads the same on every visit.
     var seed = 0;
     for (var i = 0; i < p.lot.length; i++) seed = (seed * 31 + p.lot.charCodeAt(i)) >>> 0;
     function rnd() { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; }
 
-    // "NM260924-04" → release 2026-09-24
+    // "NM260924-04" is released 2026-09-24
     var m = /NM(\d\d)(\d\d)(\d\d)/.exec(p.lot);
     var release = m ? new Date(Date.UTC(2000 + +m[1], +m[2] - 1, +m[3])) : new Date();
     var ambient = /15–25/.test(spec("Storage"));
@@ -94,7 +94,7 @@
       "</tbody></table>" +
       '<div class="coa-foot"><div><p class="coa-sign">A. Marlowe</p>Quality Control &middot; Released ' + d(release) + "</div>" +
       "<div>This lot meets all release specifications listed above. Results apply only to the lot identified on this certificate.</div></div>" +
-      '<p class="coa-note">Specimen certificate for the Nuvamin concept store. Lot numbers, dates and results are illustrative and generated for demonstration. For research use only &mdash; not for use in diagnostic or therapeutic procedures.</p>';
+      '<p class="coa-note">Nuvamin &middot; Columbus, Ohio &middot; labs@nuvamin.bio. For research use only. Not for use in diagnostic or therapeutic procedures.</p>';
   })();
 </script>
 </body>

@@ -1,4 +1,4 @@
-/* Nuvamin — shared behaviour: header, cart store, reveals, motion system. */
+/* Nuvamin: shared behavior (header, cart store, reveals, motion system). */
 
 (function () {
   "use strict";
@@ -29,7 +29,7 @@
   var footerHTML =
     '<div class="wrap footer-grid">' +
     '<div class="footer-brand"><span class="brand" style="text-align:left;text-indent:0">Nuvamin</span>' +
-    "<p>Precision materials for biological research. Reference compounds, analytical standards and molecular reagents &mdash; every lot characterised, documented and traceable.</p></div>" +
+    "<p>Reference materials, analytical standards and molecular reagents for life science research. Tested lot by lot in Columbus, Ohio.</p></div>" +
     '<div><h4 class="footer-h">Company</h4><ul>' +
     '<li><a href="about.html">About</a></li>' +
     '<li><a href="contact.html">Contact</a></li>' +
@@ -42,8 +42,8 @@
     "</ul></div>" +
     "</div>" +
     '<div class="footer-word" aria-hidden="true">Nuvamin</div>' +
-    '<p class="wrap footer-disclaimer">Nuvamin is a concept store and design study. Product listings, lot numbers and analytical data are illustrative, and orders placed on this site are simulated &mdash; nothing is charged or shipped. Within the concept, all materials are for research use only and not for use in diagnostic or therapeutic procedures.</p>' +
-    '<div class="footer-base"><span>&copy; 2026 Nuvamin</span><span>For research use only &middot; Concept store</span>' +
+    '<p class="wrap footer-disclaimer">Nuvamin is a concept store and design study. Product listings, lot numbers and analytical data are illustrative, and orders placed on this site are simulated. Nothing is charged or shipped.</p>' +
+    '<div class="footer-base"><span>&copy; 2026 Nuvamin</span><span>For research use only</span>' +
     '<span><a href="privacy.html">Privacy</a> &middot; <a href="terms.html">Terms</a> &middot; <a href="shipping-returns.html">Shipping &amp; returns</a></span></div>';
 
   var headerEl = document.querySelector(".site-header");
@@ -127,7 +127,7 @@
     var amb = hero.querySelector(".ambient");
 
     // Mask the light layers to the hero vial's silhouette. The mask is only
-    // enabled AFTER the vial image has fully decoded — applying it earlier
+    // enabled AFTER the vial image has fully decoded; applying it earlier
     // lets the gradient layers paint unmasked for a frame (or longer on a
     // slow load), which reads as a grey box around the vial.
     var maskOK = "maskImage" in document.body.style || "webkitMaskImage" in document.body.style;
@@ -135,7 +135,7 @@
       var img = rig.querySelector("img");
       if (img) {
         var applyMask = function () {
-          if (!img.naturalWidth) return; // image failed — leave layers hidden
+          if (!img.naturalWidth) return; // image failed: leave layers hidden
           var url = 'url("' + img.getAttribute("src") + '")';
           [light, sweep].forEach(function (el) {
             if (!el) return;
@@ -284,9 +284,9 @@
     var cart;
     try { cart = JSON.parse(localStorage.getItem(CART_KEY)) || {}; }
     catch (e) { return {}; }
-    // Prune ids that are no longer in the catalogue so the header badge,
+    // Prune ids that are no longer in the catalog so the header badge,
     // the cart page and the checkout payload always agree (carts persist
-    // in localStorage across catalogue changes).
+    // in localStorage across catalog changes).
     if (typeof nvFindProduct === "function") {
       for (var id in cart) if (!nvFindProduct(id)) delete cart[id];
     }
@@ -379,7 +379,7 @@
     btn.setAttribute("aria-expanded", open ? "true" : "false");
   });
 
-  /* ---------- newsletter + contact (concept store: handled in the browser) ---------- */
+  /* ---------- newsletter + contact (handled in the browser) ---------- */
 
   var EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
@@ -393,7 +393,7 @@
         if (input) input.focus();
         return;
       }
-      form.innerHTML = '<p class="news-ok" role="status">You&rsquo;re on the list &mdash; lot reports arrive as new materials are released.</p>';
+      form.innerHTML = '<p class="news-ok" role="status">Thanks for subscribing. Use code LOT10 for 10% off your first order.</p>';
     }
     if (form.matches("[data-contact]")) {
       e.preventDefault();
@@ -403,7 +403,7 @@
       if (!name) { toast("Enter your name"); form.name.focus(); return; }
       if (!EMAIL_RE.test(email || "")) { toast("Enter a valid email address"); form.email.focus(); return; }
       if (!message) { toast("Add a message"); form.message.focus(); return; }
-      form.innerHTML = '<p class="form-ok" role="status">Received &mdash; a member of the lab team replies within one working day.</p>';
+      form.innerHTML = '<p class="form-ok" role="status">Thanks, we&rsquo;ve got your message. Someone from the lab will reply within one working day.</p>';
     }
   });
 

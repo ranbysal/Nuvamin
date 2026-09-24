@@ -1,12 +1,12 @@
 # Nuvamin
 
-**Precision materials for biological research** — a concept storefront and design
+**Precision materials for biological research** - a concept storefront and design
 study for a fictional life-science materials brand. Reference compounds,
 analytical standards and molecular reagents, every one shipped in the same
 Nuvamin 2R vial and identified by a permanent NVM code.
 
 The store is fully browsable: add materials to the cart, fill in delivery
-details and place an order. Checkout is **simulated** — the order is priced in
+details and place an order. Checkout is **simulated** - the order is priced in
 the browser and lands on a confirmation page marked *Mock*. Nothing is charged,
 stored on a server or shipped.
 
@@ -33,8 +33,8 @@ Self-hosted fonts (Space Grotesk, Fraunces, Inter), GSAP for the pinned
 
 ## The catalogue
 
-All product data lives in `assets/js/products.js` — five families
-(reference, cellular, molecular, analytical, metabolic), 20 materials. Shared
+All product data lives in `assets/js/products.js` - five families
+(reference, cellular, molecular, analytical, metabolic), 24 materials. Shared
 behaviour (header, footer, cart store, motion) is in `assets/js/main.js`;
 all styling in `assets/css/style.css`.
 
@@ -53,8 +53,8 @@ python3 tools/make-assets.py nad    # just one
 ```
 
 `tools/make-assets.py` starts from `tools/vial-blank.png` (the studio vial with
-an empty label), draws the label — family colour band, NVM code, name, format,
-grade, lot and a faint structure — wraps it onto the vial's curvature, and
+an empty label), draws the label - family colour band, NVM code, name, format,
+grade, lot and a faint structure - wraps it onto the vial's curvature, and
 writes `assets/img/<id>.webp` plus `assets/img/structures/<id>.svg`.
 
 To add a material: add an entry to `products.js`, add its SMILES to `SMILES`
@@ -68,7 +68,7 @@ npm start        # http://localhost:3000
 
 ## Deploy
 
-Any static host. On Vercel, import the repo with the *Other* preset — the
+Any static host. On Vercel, import the repo with the *Other* preset - the
 included `vercel.json` only enables clean URLs.
 
 Palette (Elegant Shadows): `#FFFFFF` · `#B0BEC5` · `#78909C` · `#455A64` · `#000000`,

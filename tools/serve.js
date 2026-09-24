@@ -1,5 +1,5 @@
 /* Zero-dependency static server for local preview: `npm start`.
-   Mirrors the Vercel config — clean URLs (/faq → faq.html) and 404.html. */
+   Mirrors the Vercel config: clean URLs (/faq → faq.html) and 404.html. */
 
 "use strict";
 

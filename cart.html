@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Cart — Nuvamin</title>
+<title>Cart | Nuvamin</title>
 <meta name="description" content="Your Nuvamin cart.">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Nuvamin">
-<meta property="og:title" content="Cart — Nuvamin">
+<meta property="og:title" content="Cart | Nuvamin">
 <meta property="og:description" content="Your Nuvamin cart.">
 <meta property="og:image" content="https://nuvamin.bio/assets/img/nvm-204.webp">
 <meta name="twitter:card" content="summary">
@@ -40,7 +40,7 @@
     var FREE_SHIP = 150, SHIP = 9;
     var CO_KEY = "nuvamin-checkout";
     var ORDER_KEY = "nuvamin-last-order";
-    var CODES = { LOT10: 0.10 };             // demo discount codes
+    var CODES = { LOT10: 0.10 };             // valid discount codes
 
     function eur(n) { return "$" + Number(n).toFixed(2); }
 
@@ -66,7 +66,7 @@
       if (!ids.length) {
         root.innerHTML =
           '<div class="cart-empty' + (firstRender ? ' cart-enter' : '') + '">' +
-          "<p>Your cart is empty &mdash; a state of great potential.</p>" +
+          "<p>Your cart is empty.</p>" +
           '<a class="btn" href="shop.html">Explore the library <span class="arr">&rarr;</span></a>' +
           "</div>";
         firstRender = false;
@@ -112,9 +112,9 @@
         "<div>" + field("co-city", "City", "address-level2") + "</div>" +
         "</div>" +
         field("co-country", "Country", "country-name") +
-        field("co-code", "Discount code", null, { optional: true, placeholder: "e.g. LOT10" }) +
+        field("co-code", "Discount code", null, { optional: true, placeholder: "Enter code" }) +
         '<button class="btn" id="checkout">Place order <span class="arr">&rarr;</span></button>' +
-        '<p style="margin-top:16px;font-size:11.5px;color:var(--ink-40)">Demonstration checkout &mdash; no payment is taken and nothing ships. Try the code LOT10 for 10% off.</p>' +
+        '<p style="margin-top:16px;font-size:11.5px;color:var(--ink-40)">By placing your order you agree to our <a class="inline-link" href="terms.html">Terms of Sale</a>. A certificate of analysis is included for every lot.</p>' +
         "</aside></div>";
 
       var saved = readSaved();
@@ -179,7 +179,6 @@
       var shipping = subtotal - discount >= FREE_SHIP ? 0 : SHIP;
       var order = {
         id: orderId(),
-        mock: true,
         placedAt: new Date().toISOString(),
         items: items,
         subtotal: subtotal,
@@ -199,7 +198,7 @@
         localStorage.removeItem("nuvamin-cart");
         sessionStorage.removeItem(CO_KEY);
       } catch (e) {}
-      // a short, deliberate beat so the hand-off feels like a real submission
+      // short pause so the button state registers before navigating
       setTimeout(function () {
         window.location.href = "confirmation.html?order=" + encodeURIComponent(order.id);
       }, 650);

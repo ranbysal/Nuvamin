@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Order Confirmed (Mock) — Nuvamin</title>
-<meta name="description" content="Your mock Nuvamin order is confirmed.">
+<title>Order Confirmed | Nuvamin</title>
+<meta name="description" content="Your Nuvamin order is confirmed.">
 <meta name="robots" content="noindex">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23000000'/%3E%3Ctext x='16' y='22' text-anchor='middle' font-family='Arial' font-size='17' fill='%23FFFFFF'%3EN%3C/text%3E%3C/svg%3E">
 <link rel="stylesheet" href="assets/css/style.css">
@@ -21,14 +21,14 @@
       </div>
       <p><span class="r-mock">Mock order</span></p>
       <h1 id="r-title">Order confirmed</h1>
-      <p class="r-sub" id="r-sub">Thank you &mdash; this is a mock order. No payment was taken and nothing will ship.</p>
+      <p class="r-sub" id="r-sub">Thank you for your order.</p>
       <p class="r-order" id="r-order"></p>
       <div class="result-card" id="r-card" hidden></div>
       <div class="r-actions">
         <a class="btn" href="shop.html">Continue shopping <span class="arr">&rarr;</span></a>
         <a class="btn btn-line" href="faq.html">Read the FAQ</a>
       </div>
-      <p class="r-note">Nuvamin is a concept store. This confirmation is a mock &mdash; in the live concept, a receipt and each lot&rsquo;s certificate of analysis would follow by email.</p>
+      <p class="r-note">Orders ship within one to two business days. We&rsquo;ll email your tracking number once it&rsquo;s on its way, with the certificate for each lot attached.</p>
     </div>
   </div>
 </section>
@@ -58,12 +58,14 @@
 
     if (!o || (id && o.id !== id)) {
       titleEl.textContent = "No order found";
-      subEl.textContent = "We couldn't find that mock order in this browser session.";
-      if (id) orderEl.textContent = "Order " + id + " · Mock";
+      subEl.textContent = "We couldn't find that order. If you placed it recently, check your email for the confirmation.";
+      if (id) orderEl.textContent = "Order " + id;
       return;
     }
 
-    orderEl.textContent = "Order " + o.id + " · Mock";
+    orderEl.textContent = "Order " + o.id;
+    var first = o.customer && o.customer.name ? o.customer.name.split(" ")[0] : "";
+    subEl.textContent = first ? "Thank you, " + first + ". Your order is in." : "Thank you. Your order is in.";
     var placed = new Date(o.placedAt);
     var a = o.address || {};
     var rows = o.items.map(function (i) {
@@ -78,9 +80,9 @@
       '<p class="rc-head">Items</p>' + rows +
       (o.discount ? '<div class="rc-row"><span>Discount (' + esc(o.discountCode) + ')</span><span>&minus;' + usd(o.discount) + "</span></div>" : "") +
       '<div class="rc-row"><span>Shipping</span><span>' + (o.shipping === 0 ? "Free" : usd(o.shipping)) + "</span></div>" +
-      '<div class="rc-row rc-total"><span>Total (mock &mdash; not charged)</span><span>' + usd(o.total) + "</span></div>" +
+      '<div class="rc-row rc-total"><span>Total</span><span>' + usd(o.total) + "</span></div>" +
       '<p class="rc-head" style="margin-top:16px">Placed ' + placed.toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" }) +
-      " &middot; confirmation for " + esc(o.customer && o.customer.email) + "</p>";
+      " &middot; Confirmation sent to " + esc(o.customer && o.customer.email) + "</p>";
     card.hidden = false;
 
     try { localStorage.removeItem("nuvamin-cart"); } catch (e) {}

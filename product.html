@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Material — Nuvamin</title>
-<meta name="description" content="Nuvamin material — structure, full analytical specification, lot certificate and handling guidance.">
+<title>Product | Nuvamin</title>
+<meta name="description" content="Structure, full specification, lot certificate and handling notes for Nuvamin research materials.">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Nuvamin">
-<meta property="og:title" content="Material — Nuvamin">
-<meta property="og:description" content="Nuvamin material — structure, full analytical specification, lot certificate and handling guidance.">
+<meta property="og:title" content="Product | Nuvamin">
+<meta property="og:description" content="Structure, full specification, lot certificate and handling notes for Nuvamin research materials.">
 <meta property="og:image" content="https://nuvamin.bio/assets/img/nvm-204.webp">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23000000'/%3E%3Ctext x='16' y='22' text-anchor='middle' font-family='Arial' font-size='17' fill='%23FFFFFF'%3EN%3C/text%3E%3C/svg%3E">
@@ -41,12 +41,12 @@
   (function () {
     var params = new URLSearchParams(location.search);
     var requestedId = params.get("id");
-    // No id → default to the flagship material; an id that doesn't exist →
-    // back to the library rather than a half-broken page.
+    // No id: default to the flagship material. Unknown id: back to the
+    // library rather than a half-broken page.
     var p = requestedId ? nvFindProduct(requestedId) : NV_PRODUCTS[0];
     if (!p) { location.replace("shop.html"); return; }
     var fam = nvFamily(p);
-    document.title = p.name + " " + nvQty(p) + " — Nuvamin";
+    document.title = p.name + " " + nvQty(p) + " | Nuvamin";
 
     var qty = 1;
     function spec(k) {
@@ -96,7 +96,7 @@
       '<ul class="pdp-research">' + research + "</ul>" +
       '<div class="pdp-buy">' +
       '<div class="qty"><button type="button" data-q="-1" aria-label="Decrease quantity">&minus;</button><output id="qty-out">1</output><button type="button" data-q="1" aria-label="Increase quantity">+</button></div>' +
-      '<button class="btn" id="pdp-add">Add to cart &mdash; $<span id="pdp-total">' + p.price.toFixed(2) + "</span></button>" +
+      '<button class="btn" id="pdp-add">Add to cart &middot; $<span id="pdp-total">' + p.price.toFixed(2) + "</span></button>" +
       "</div>" +
       '<p class="pdp-ship"><span>Free shipping over $150</span><span>' + (cold ? "Cold-pack dispatch" : "Ambient dispatch") + '</span><span>Certificate included</span><span>Lot ' + p.lot + "</span></p>" +
       '<p class="pdp-ruo">For research use only. Not for use in diagnostic or therapeutic procedures.</p>' +
@@ -105,10 +105,10 @@
       '<div class="acc">' +
       '<div class="acc-item"><button class="acc-btn" aria-expanded="false">Analytical specification <span class="acc-x">+</span></button><div class="acc-panel"><div class="acc-body"><table>' + specRows + "</table></div></div></div>" +
       components +
-      '<div class="acc-item"><button class="acc-btn" aria-expanded="false">Certificate of analysis <span class="acc-x">+</span></button><div class="acc-panel"><div class="acc-body"><p>Lot ' + p.lot + " of " + p.name + " was released after identity confirmation by <sup>1</sup>H-NMR and LC-MS, purity by " + (/CAD/.test(spec("Purity")) ? "HPLC with charged-aerosol detection" : "HPLC-UV") + ", and water content by Karl Fischer titration. The certificate travels with every vial and is archived for five years under its lot number.</p>" +
+      '<div class="acc-item"><button class="acc-btn" aria-expanded="false">Certificate of analysis <span class="acc-x">+</span></button><div class="acc-panel"><div class="acc-body"><p>Lot ' + p.lot + " of " + p.name + " was released after we confirmed identity by <sup>1</sup>H-NMR and LC-MS, purity by " + (/CAD/.test(spec("Purity")) ? "HPLC with charged-aerosol detection" : "HPLC-UV") + " and water content by Karl Fischer titration. A printed copy comes in the box, and we keep the full record on file for five years.</p>" +
       '<p style="margin-top:14px"><a class="inline-link" href="coa.html?id=' + p.id + '">View the certificate for lot ' + p.lot + " &rarr;</a></p></div></div></div>" +
-      '<div class="acc-item"><button class="acc-btn" aria-expanded="false">Handling &amp; storage <span class="acc-x">+</span></button><div class="acc-panel"><div class="acc-body"><p>Store the sealed vial at ' + spec("Storage") + ". " + (cold ? "Allow the vial to reach room temperature before opening to avoid condensation on the material. " : "") + "Solubility: " + spec("Solubility").charAt(0).toLowerCase() + spec("Solubility").slice(1) + ". Prepare solutions fresh where possible; concentrations and buffers depend on your method and remain the responsibility of the researcher.</p></div></div></div>" +
-      '<div class="acc-item"><button class="acc-btn" aria-expanded="false">Shipping <span class="acc-x">+</span></button><div class="acc-panel"><div class="acc-body"><p>Prepared for dispatch within one to two business days. ' + (cold ? "This material ships on cold packs in an insulated shipper." : "This material is stable at ambient temperature and ships in standard protective packaging.") + " Tracked service across eligible destinations in North America and Europe. See our Shipping &amp; Returns policy for detail.</p></div></div></div>" +
+      '<div class="acc-item"><button class="acc-btn" aria-expanded="false">Handling &amp; storage <span class="acc-x">+</span></button><div class="acc-panel"><div class="acc-body"><p>Store the sealed vial at ' + spec("Storage") + ". " + (cold ? "Allow the vial to reach room temperature before opening to avoid condensation on the material. " : "") + "Solubility: " + spec("Solubility").charAt(0).toLowerCase() + spec("Solubility").slice(1) + ". We recommend preparing solutions fresh. Concentrations and buffers will depend on your method.</p></div></div></div>" +
+      '<div class="acc-item"><button class="acc-btn" aria-expanded="false">Shipping <span class="acc-x">+</span></button><div class="acc-panel"><div class="acc-body"><p>Prepared for dispatch within one to two business days. ' + (cold ? "This material ships on cold packs in an insulated shipper." : "This material is stable at ambient temperature and ships in standard protective packaging.") + " Tracked shipping to the US, Canada, the UK and the EU. See <a class=\"inline-link\" href=\"shipping-returns.html\">Shipping &amp; Returns</a> for details.</p></div></div></div>" +
       "</div></div>";
 
     function syncQty() {

@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>The Library — Nuvamin</title>
-<meta name="description" content="The Nuvamin molecular library — reference materials, cellular cofactors, molecular reagents, analytical standards and metabolic substrates, every lot characterised.">
+<title>Shop the Library | Nuvamin</title>
+<meta name="description" content="Shop reference materials, cellular cofactors, molecular reagents, analytical standards and metabolic substrates. Every lot tested before release.">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Nuvamin">
-<meta property="og:title" content="The Library — Nuvamin">
-<meta property="og:description" content="Reference materials, cellular cofactors, molecular reagents, analytical standards and metabolic substrates — one standard vial, every lot characterised.">
+<meta property="og:title" content="Shop the Library | Nuvamin">
+<meta property="og:description" content="Reference materials, cofactors, reagents, standards and substrates in one standard vial. Every lot tested before release.">
 <meta property="og:image" content="https://nuvamin.bio/assets/img/nvm-204.webp">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23000000'/%3E%3Ctext x='16' y='22' text-anchor='middle' font-family='Arial' font-size='17' fill='%23FFFFFF'%3EN%3C/text%3E%3C/svg%3E">
@@ -22,7 +22,7 @@
   <div class="wrap">
     <p class="kicker">The molecular library</p>
     <h1 class="h-display h-xl">All materials</h1>
-    <p class="lede">A curated collection of materials for the life sciences. Every entry carries an NVM code, ships in the same 2R vial and is characterised lot by lot before release.</p>
+    <p class="lede">Every material we sell has its own NVM code, ships in the same 2R vial and is tested lot by lot before release. Filter by family, or switch to the index to compare formulas and specs.</p>
   </div>
 </section>
 
@@ -49,8 +49,8 @@
     <div class="reveal">
     <p class="kicker no-rule" style="justify-content:center">Every vial, every lot</p>
     <h2 class="h-display h-lg" style="margin:20px 0 28px">The certificate<br><span class="serif-note" style="color:#B0BEC5">ships with the science.</span></h2>
-    <p class="lede" style="margin:0 auto 36px">Identity by NMR and LC-MS, purity by HPLC, water content by Karl Fischer. Open any product and view its certificate before the vial ever leaves the shelf.</p>
-    <a class="btn btn-ghost" href="faq.html#certificates">How we characterise <span class="arr">&rarr;</span></a>
+    <p class="lede" style="margin:0 auto 36px">Identity by NMR and LC-MS, purity by HPLC and water content by Karl Fischer. Every product page links to the certificate for the current lot, so you can check the data before you order.</p>
+    <a class="btn btn-ghost" href="faq.html#certificates">How we test <span class="arr">&rarr;</span></a>
     </div>
   </div>
 </section>
@@ -84,7 +84,7 @@
 
     function mw(p) {
       for (var i = 0; i < p.specs.length; i++) if (p.specs[i].k === "Molar mass") return p.specs[i].v.replace(" g/mol", "");
-      return "&mdash;";
+      return "Mixed";
     }
     function formula(p) {
       for (var i = 0; i < p.specs.length; i++) if (p.specs[i].k === "Molecular formula") return nvFormula(p.specs[i].v);

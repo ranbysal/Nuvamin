@@ -1,11 +1,11 @@
-/* Nuvamin — "Plate Series": scroll-driven pinned photo sequence (section 03).
+/* Nuvamin: "Plate Series": scroll-driven pinned photo sequence (section 03).
  *
  * Progressive enhancement over the static stacked layout in index.html:
  *  - Desktop (no reduced-motion, >=720w, >=620h): the section pins for 340vh
  *    and scroll scrubs four "plates" through soft cross-dissolves with subtle
  *    scale settles, line-masked captions, a rolling ghost numeral, and an
  *    honest 1px progress rail.
- *  - Narrow viewports: no pin — the stacked layout gains a gentle scrubbed
+ *  - Narrow viewports: no pin: the stacked layout gains a gentle scrubbed
  *    settle per plate and caption line-rises.
  *  - Reduced motion / GSAP missing / any failure: the untouched stacked
  *    default renders. The enhanced state is purely additive (one <html>
@@ -13,7 +13,7 @@
  *    reverts all of it atomically when conditions change.
  *
  * Transform ownership: transitions own scale/opacity, drift owns y(px), and
- * the digit roll owns the inner column — separate channels, no collisions.
+ * the digit roll owns the inner column: separate channels, no collisions.
  * No .reveal / data-parallax inside [data-seq] (those systems would fight).
  */
 
@@ -75,7 +75,7 @@
   function qa(sel, root) { return gsap.utils.toArray((root || document).querySelectorAll(sel)); }
 
   function buildPinned() {
-    // Layout class first — the trigger must measure the enhanced layout.
+    // Layout class first: the trigger must measure the enhanced layout.
     document.documentElement.classList.add("lab-enhanced");
 
     var masks = chapters.map(function (c) { return q("[data-seq-mask]", c); });
@@ -127,7 +127,7 @@
       },
     });
 
-    // Hold 1 — plate one finishes arriving (hands off from the lead-in).
+    // Hold 1: plate one finishes arriving (hands off from the lead-in).
     tl.fromTo(medias[0], { scale: 1.06 }, { scale: 1, duration: 0.10, ease: "power1.out", immediateRender: false }, 0);
 
     // Three quiet cross-dissolves. The outgoing plate remains steady while
@@ -166,7 +166,7 @@
       if (countCol) tl.to(countCol, { yPercent: -25 * inn, duration: SEG * 0.30, ease: "power2.inOut" }, s + SEG * 0.35);
     });
 
-    // Continuous underlays (whole pin, linear — separate transform channels).
+    // Continuous underlays (whole pin, linear: separate transform channels).
     var span = [[0, 0.30], [0.10, 0.62], [0.42, 0.94], [0.74, 1.0]];
     medias.forEach(function (m, i) {
       tl.fromTo(m, { y: 10 }, { y: -10, duration: span[i][1] - span[i][0], ease: "none", immediateRender: false }, span[i][0]);

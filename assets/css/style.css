@@ -1,5 +1,5 @@
 /* ============================================================
-   NUVAMIN — precision molecular materials (concept store)
+   NUVAMIN: precision molecular materials (concept store)
    Palette: #ECEFF1 / #78909C / #455A64 / #FFFFFF / #000000
    ============================================================ */
 
@@ -227,7 +227,7 @@ body.hero-go .hero-word .hl {
   55%  { opacity: 1; filter: blur(0); }
   100% { opacity: 1; transform: translate3d(0, 0, 0) scale(1); filter: blur(0); }
 }
-/* converging hairlines — mirror the letters' inward assembly, meet, then dissolve */
+/* converging hairlines: mirror the letters' inward assembly, meet, then dissolve */
 .hero-word { position: relative; }
 .hero-word::before, .hero-word::after {
   content: "";
@@ -479,6 +479,13 @@ body.hero-go .hero-baseline { animation: heroFadeUp 1.05s 1.4s var(--ease) forwa
 }
 .why-cell p { font-size: 13.5px; line-height: 1.7; color: rgba(255, 255, 255, 0.6); }
 
+/* about: facts band */
+.facts .why-cell { min-height: 250px; justify-content: space-between; }
+.facts .fact {
+  font-family: var(--display); font-weight: 500; font-size: clamp(46px, 5vw, 84px);
+  letter-spacing: -0.035em; line-height: 0.9; color: var(--cream); margin-bottom: 18px;
+}
+
 /* ---------- ingredient story ---------- */
 
 .ing-layout {
@@ -511,7 +518,7 @@ body.hero-go .hero-baseline { animation: heroFadeUp 1.05s 1.4s var(--ease) forwa
 .life { background: var(--mist); }
 
 /* DEFAULT (no JS / reduced motion / GSAP failed): a static stacked editorial
-   sequence — four framed plates with visible captions. The pinned, scrubbed
+   sequence: four framed plates with visible captions. The pinned, scrubbed
    mode is applied by assets/js/lab-sequence.js, which adds .lab-enhanced to
    <html>; ALL enhanced-mode layout lives under that class, and GSAP owns
    every transform/clip/opacity inline. No .reveal / data-parallax in here.
@@ -574,11 +581,11 @@ body.hero-go .hero-baseline { animation: heroFadeUp 1.05s 1.4s var(--ease) forwa
   text-shadow: 0 1px 12px rgba(0, 0, 0, 0.4);
 }
 
-/* GSAP-only layers — inert in the static default */
+/* GSAP-only layers: inert in the static default */
 .seq-scrim { position: absolute; inset: 0; z-index: 1; background: var(--slate); opacity: 0; pointer-events: none; }
 .seq-blade { position: absolute; left: 0; right: 0; top: 0; height: 1px; z-index: 2; background: var(--ink); opacity: 0; pointer-events: none; }
 
-/* captions — line-mask rows (fully visible by default) */
+/* captions: line-mask rows (fully visible by default) */
 .seq-cap { margin: 16px 0 0; max-width: 56ch; }
 .seq-cap .mask { display: block; overflow: hidden; }
 .seq-cap .mline { display: block; }
@@ -600,7 +607,7 @@ body.hero-go .hero-baseline { animation: heroFadeUp 1.05s 1.4s var(--ease) forwa
 /* ghost numeral + progress rail exist only in the enhanced mode */
 .seq-ghost, .seq-rail { display: none; }
 
-/* ============ ENHANCED (pinned) MODE — html.lab-enhanced ============ */
+/* ============ ENHANCED (pinned) MODE: html.lab-enhanced ============ */
 
 html.lab-enhanced .life {
   padding: 0;
@@ -610,7 +617,7 @@ html.lab-enhanced .life {
   overflow: hidden;
 }
 /* .wrap carries margin-inline auto; in a flex column that would shrink it
-   to fit-content — force full width so the head keeps its left alignment */
+   to fit-content: force full width so the head keeps its left alignment */
 html.lab-enhanced .life > .wrap:first-child { width: 100%; padding-top: 86px; }
 html.lab-enhanced .life .section-head { margin-bottom: clamp(14px, 2.5vh, 28px); }
 html.lab-enhanced .seq { flex: 1; min-height: 0; margin: 0; display: flex; }
@@ -1198,7 +1205,7 @@ body.page-out { opacity: 0; transition: opacity 0.24s ease; }
 .toast.show { transform: translate(-50%, 0); visibility: visible; }
 
 /* ============================================================
-   MOLECULAR LIBRARY — additions built on the same tokens
+   MOLECULAR LIBRARY: additions built on the same tokens
    ============================================================ */
 
 /* family colour key (vial bands) */
@@ -1217,6 +1224,7 @@ body.page-out { opacity: 0; transition: opacity 0.24s ease; }
 }
 .view-toggle button[aria-pressed="true"] { background: var(--ink); color: var(--cream); }
 .fam-intro { display: flex; gap: 14px; align-items: baseline; margin: -18px 0 clamp(28px, 3vw, 44px); min-height: 1.6em; }
+.fam-intro:empty { display: none; }
 .fam-intro b { font-family: var(--display); font-size: 11px; font-weight: 500; letter-spacing: 0.2em; text-transform: uppercase; }
 .fam-intro span { font-family: var(--serif); font-style: italic; color: var(--ink-60); }
 
@@ -1301,17 +1309,12 @@ body.page-out { opacity: 0; transition: opacity 0.24s ease; }
 .result-card .rc-head { font-family: var(--display); font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink-40); padding-bottom: 6px; }
 .result-card .rc-addr { font-size: 13.5px; color: var(--ink-60); line-height: 1.7; padding-bottom: 18px; margin-bottom: 10px; border-bottom: 1px solid var(--line-soft); }
 
-/* certificate of analysis (specimen) */
+/* certificate of analysis */
 .coa-wrap { padding: calc(72px + clamp(32px, 5vw, 72px)) 0 clamp(60px, 8vw, 120px); background: var(--mist); }
 .coa-actions { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; max-width: 880px; margin: 0 auto 22px; }
 .coa {
   position: relative; max-width: 880px; margin: 0 auto; background: var(--paper); border: 1px solid var(--line-soft);
   padding: clamp(28px, 5vw, 64px); box-shadow: 0 30px 80px rgba(0, 0, 0, 0.06); overflow: hidden;
-}
-.coa::after {
-  content: "Specimen"; position: absolute; left: 50%; top: 52%; transform: translate(-50%, -50%) rotate(-24deg);
-  font-family: var(--display); font-weight: 700; font-size: clamp(64px, 12vw, 150px); letter-spacing: 0.08em;
-  text-transform: uppercase; color: rgba(69, 90, 100, 0.06); pointer-events: none; white-space: nowrap;
 }
 .coa-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; padding-bottom: 22px; border-bottom: 2px solid var(--ink); }
 .coa-top .brand { text-align: left; text-indent: 0; font-size: 15px; }

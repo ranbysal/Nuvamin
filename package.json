@@ -2,7 +2,7 @@
   "name": "nuvamin",
   "version": "2.0.0",
   "private": true,
-  "description": "Nuvamin — a concept storefront for precision molecular materials (static site, simulated checkout)",
+  "description": "Nuvamin: a concept storefront for precision molecular materials (static site, simulated checkout)",
   "engines": {
     "node": ">=18"
   },
