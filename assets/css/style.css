@@ -821,6 +821,10 @@ html.lab3d-on .lab-foot {
 }
 .footer-base a { color: rgba(255, 255, 255, 0.4); transition: color 0.3s; }
 .footer-base a:hover { color: #fff; }
+.footer-credit { display: inline-flex; align-items: center; gap: 12px; }
+.footer-credit i { font-style: normal; opacity: 0.5; }
+.footer-gh { display: inline-flex; align-items: center; gap: 7px; text-transform: none; letter-spacing: 0.08em; }
+.footer-gh svg { width: 13px; height: 13px; flex: none; }
 .footer-disclaimer {
   padding: 0 var(--gutter) 26px;
   font-size: 11px;

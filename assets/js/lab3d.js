@@ -1,4 +1,4 @@
-/* Nuvamin: "Inside the lab", the life of one lot (homepage section 03).
+/* Nuvamin: "Inside the lab", the life of one lot (homepage section 02).
 
    One lot, NM260924-04 (NVM-204), is followed through four stages while the
    section is pinned and scrubbed by scroll:
@@ -301,7 +301,7 @@ function enhance() {
   const st = ScrollTrigger.create({
     trigger: root,
     start: "top top",
-    end: () => "+=" + Math.round(window.innerHeight * 4.4),
+    end: () => "+=" + Math.round(window.innerHeight * 5.3),
     pin: true,
     pinSpacing: true,
     anticipatePin: 1,
@@ -902,7 +902,7 @@ function enhance() {
       const dt = Math.min(0.1, (now - last) / 1000);
       last = now;
       if (!primed) { P = target; primed = true; }
-      P += (target - P) * (1 - Math.exp(-dt * 5.2));
+      P += (target - P) * (1 - Math.exp(-dt * 4.6));
       if (Math.abs(target - P) < 0.00005) P = target;
       showStage(stageOf(P));
       updateReadouts(P);

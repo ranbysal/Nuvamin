@@ -19,7 +19,7 @@ tree-shaken Three.js build (`assets/js/vendor/three.lab.min.js`, rebuilt from
 
 ### Inside the lab
 
-`assets/js/lab3d.js` pins homepage section 03 and follows one lot through
+`assets/js/lab3d.js` pins homepage section 02 and follows one lot through
 intake, identity, filling and release: a particle cloud in a quarantine cage,
 a real ATP molecule (RDKit coordinates) with a scan ring, a pour into a glass
 2R vial with the cap crimping on, and the label wrapping as the vial spins.
