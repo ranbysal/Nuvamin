@@ -517,7 +517,25 @@ body.hero-go .hero-baseline { animation: heroFadeUp 1.05s 1.4s var(--ease) forwa
 /* Default = static editorial layout (photos + readouts). html.lab3d-on is set
    by assets/js/lab3d.js and turns .lab-stage into a pinned WebGL scene. */
 
-.lab { background: var(--mist); overflow: clip; }
+/* the featured grid hands straight into the lab: no hard edge, the page
+   fades from paper to mist while the lab grid quietly surfaces */
+.featured { padding-bottom: clamp(28px, 3vw, 48px); }
+.lab {
+  position: relative; overflow: clip; padding-top: clamp(64px, 7vw, 112px);
+  background: linear-gradient(180deg,
+    #FFFFFF 0px, #FCFDFD 40px, #F7F8F9 100px, #F1F3F4 170px, #EDF0F2 230px, var(--mist) 270px);
+}
+.lab::before {
+  content: ""; position: absolute; left: 0; right: 0; top: 0; height: clamp(360px, 34vw, 480px); pointer-events: none;
+  background:
+    linear-gradient(rgba(69, 90, 100, 0.07) 1px, transparent 1px) 0 0 / 56px 56px,
+    linear-gradient(90deg, rgba(69, 90, 100, 0.07) 1px, transparent 1px) 0 0 / 56px 56px;
+  -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 42%, #000 58%, transparent 100%), radial-gradient(ellipse 70% 100% at 50% 40%, #000 30%, transparent 80%);
+  -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(180deg, transparent 0%, #000 42%, #000 58%, transparent 100%), radial-gradient(ellipse 70% 100% at 50% 40%, #000 30%, transparent 80%);
+  mask-composite: intersect;
+}
+.lab > .wrap { position: relative; }
 .lab-stage { position: relative; }
 .lab-bg, .lab-ghost, .lab-canvas, .lab-index, .lab-foot { display: none; }
 .lab-index { list-style: none; }
