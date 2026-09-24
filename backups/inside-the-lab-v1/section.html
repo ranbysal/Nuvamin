@@ -1,0 +1,112 @@
+<!-- ============ INSIDE THE LAB ============ -->
+<section class="section life">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <div>
+        <p class="kicker">03 / Process</p>
+        <h2 class="h-display h-lg">Inside the lab</h2>
+      </div>
+    </div>
+  </div>
+    <!-- "Plate Series": scroll-driven pinned photo sequence (GSAP ScrollTrigger).
+         DEFAULT markup/CSS render a static stacked editorial layout; the pin is
+         a progressive enhancement added by assets/js/lab-sequence.js.
+         Photo slots are PLACEHOLDERS: drop the four final photographs in as
+         assets/img/lab/lab-01..04.webp (they layer over the placeholder art
+         automatically).
+         RULE: no .reveal / no data-parallax anywhere inside [data-seq]. -->
+    <div class="seq" data-seq>
+      <div class="wrap seq-grid">
+        <span class="seq-ghost" aria-hidden="true">0<span class="seq-ghost-win"><span class="seq-ghost-col" data-seq-digits><span>1</span><span>2</span><span>3</span><span>4</span></span></span></span>
+
+        <div class="seq-stage" data-seq-stage>
+          <figure class="seq-chapter" data-seq-chapter>
+            <div class="seq-mask" data-seq-mask>
+              <div class="seq-media" data-seq-media>
+                <span class="seq-art seq-art--1" data-ph="Photo 01" aria-hidden="true"></span>
+                <img src="assets/img/lab/lab-01.webp" alt="Open-plan analytical laboratory with scientists at workstations" decoding="async" onerror="this.classList.add('is-missing')">
+              </div>
+              <span class="seq-scrim" data-seq-scrim aria-hidden="true"></span>
+              <span class="seq-blade" data-seq-blade aria-hidden="true"></span>
+            </div>
+            <figcaption class="seq-cap" data-seq-cap>
+              <span class="seq-cap-rule" data-seq-rule aria-hidden="true"></span>
+              <p class="seq-cap-meta"><span class="mask"><span class="mline" data-seq-line>Fig. 01 / Our lab</span></span></p>
+              <p class="seq-cap-desc">
+                <span class="mask"><span class="mline" data-seq-line>Every material in the library is received, tested</span></span>
+                <span class="mask"><span class="mline" data-seq-line>and released from our lab in Columbus, Ohio.</span></span>
+              </p>
+            </figcaption>
+          </figure>
+
+          <figure class="seq-chapter" data-seq-chapter>
+            <div class="seq-mask" data-seq-mask>
+              <div class="seq-media" data-seq-media>
+                <span class="seq-art seq-art--2" data-ph="Photo 02" aria-hidden="true"></span>
+                <img src="assets/img/lab/lab-02.webp" alt="Gloved hand placing sealed vials into a Nuvamin tray" decoding="async" onerror="this.classList.add('is-missing')">
+              </div>
+              <span class="seq-scrim" data-seq-scrim aria-hidden="true"></span>
+              <span class="seq-blade" data-seq-blade aria-hidden="true"></span>
+            </div>
+            <figcaption class="seq-cap" data-seq-cap>
+              <span class="seq-cap-rule" data-seq-rule aria-hidden="true"></span>
+              <p class="seq-cap-meta"><span class="mask"><span class="mline" data-seq-line>Fig. 02 / Filling</span></span></p>
+              <p class="seq-cap-desc">
+                <span class="mask"><span class="mline" data-seq-line>Each lot is filled into the same borosilicate vial,</span></span>
+                <span class="mask"><span class="mline" data-seq-line>then sealed under inert gas and labeled by lot.</span></span>
+              </p>
+            </figcaption>
+          </figure>
+
+          <figure class="seq-chapter" data-seq-chapter>
+            <div class="seq-mask" data-seq-mask>
+              <div class="seq-media" data-seq-media>
+                <span class="seq-art seq-art--3" data-ph="Photo 03" aria-hidden="true"></span>
+                <img src="assets/img/lab/lab-03.webp" alt="Scientist pipetting samples at a laboratory bench" decoding="async" onerror="this.classList.add('is-missing')">
+              </div>
+              <span class="seq-scrim" data-seq-scrim aria-hidden="true"></span>
+              <span class="seq-blade" data-seq-blade aria-hidden="true"></span>
+            </div>
+            <figcaption class="seq-cap" data-seq-cap>
+              <span class="seq-cap-rule" data-seq-rule aria-hidden="true"></span>
+              <p class="seq-cap-meta"><span class="mask"><span class="mline" data-seq-line>Fig. 03 / Weighing</span></span></p>
+              <p class="seq-cap-desc">
+                <span class="mask"><span class="mline" data-seq-line>Reference panels are weighed out component by</span></span>
+                <span class="mask"><span class="mline" data-seq-line>component on calibrated microbalances.</span></span>
+              </p>
+            </figcaption>
+          </figure>
+
+          <figure class="seq-chapter" data-seq-chapter>
+            <div class="seq-mask" data-seq-mask>
+              <div class="seq-media" data-seq-media>
+                <span class="seq-art seq-art--4" data-ph="Photo 04" aria-hidden="true"></span>
+                <img src="assets/img/lab/lab-04.webp" alt="HPLC instrument stack beside sample trays" decoding="async" onerror="this.classList.add('is-missing')">
+              </div>
+              <span class="seq-scrim" data-seq-scrim aria-hidden="true"></span>
+              <span class="seq-blade" data-seq-blade aria-hidden="true"></span>
+            </div>
+            <figcaption class="seq-cap" data-seq-cap>
+              <span class="seq-cap-rule" data-seq-rule aria-hidden="true"></span>
+              <p class="seq-cap-meta"><span class="mask"><span class="mline" data-seq-line>Fig. 04 / Release testing</span></span></p>
+              <p class="seq-cap-desc">
+                <span class="mask"><span class="mline" data-seq-line>QC reviews the HPLC, LC-MS and NMR data</span></span>
+                <span class="mask"><span class="mline" data-seq-line>before any lot is released for sale.</span></span>
+              </p>
+            </figcaption>
+          </figure>
+        </div>
+
+        <div class="seq-rail" aria-hidden="true" data-seq-rail>
+          <span class="seq-rail-track" data-seq-track>
+            <span class="seq-rail-thumb" data-seq-thumb></span>
+            <i class="seq-rail-tick" data-seq-tick></i>
+            <i class="seq-rail-tick" data-seq-tick></i>
+            <i class="seq-rail-tick" data-seq-tick></i>
+            <i class="seq-rail-tick" data-seq-tick></i>
+          </span>
+          <span class="seq-rail-count"><span class="seq-count-win"><span class="seq-count-col" data-seq-count><span>01</span><span>02</span><span>03</span><span>04</span></span></span>&thinsp;/&thinsp;04</span>
+        </div>
+      </div>
+    </div>
+</section>

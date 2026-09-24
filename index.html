@@ -104,116 +104,127 @@
 </section>
 
 <!-- ============ INSIDE THE LAB ============ -->
-<section class="section life">
+<!-- "The life of a lot": one lot followed from intake to release.
+     Default markup is a static editorial layout (photos + readouts).
+     assets/js/lab3d.js upgrades it to a pinned, scroll-driven WebGL scene
+     (html.lab3d-on) when WebGL is available and motion is allowed.
+     Previous version: backups/inside-the-lab-v1/. -->
+<section class="section lab" id="inside-the-lab">
   <div class="wrap">
     <div class="section-head reveal">
       <div>
         <p class="kicker">03 / Process</p>
         <h2 class="h-display h-lg">Inside the lab</h2>
       </div>
+      <span class="shop-count">Follow lot NM260924-04 from intake to release</span>
     </div>
   </div>
-    <!-- "Plate Series": scroll-driven pinned photo sequence (GSAP ScrollTrigger).
-         DEFAULT markup/CSS render a static stacked editorial layout; the pin is
-         a progressive enhancement added by assets/js/lab-sequence.js.
-         Photo slots are PLACEHOLDERS: drop the four final photographs in as
-         assets/img/lab/lab-01..04.webp (they layer over the placeholder art
-         automatically).
-         RULE: no .reveal / no data-parallax anywhere inside [data-seq]. -->
-    <div class="seq" data-seq>
-      <div class="wrap seq-grid">
-        <span class="seq-ghost" aria-hidden="true">0<span class="seq-ghost-win"><span class="seq-ghost-col" data-seq-digits><span>1</span><span>2</span><span>3</span><span>4</span></span></span></span>
 
-        <div class="seq-stage" data-seq-stage>
-          <figure class="seq-chapter" data-seq-chapter>
-            <div class="seq-mask" data-seq-mask>
-              <div class="seq-media" data-seq-media>
-                <span class="seq-art seq-art--1" data-ph="Photo 01" aria-hidden="true"></span>
-                <img src="assets/img/lab/lab-01.webp" alt="Open-plan analytical laboratory with scientists at workstations" decoding="async" onerror="this.classList.add('is-missing')">
-              </div>
-              <span class="seq-scrim" data-seq-scrim aria-hidden="true"></span>
-              <span class="seq-blade" data-seq-blade aria-hidden="true"></span>
-            </div>
-            <figcaption class="seq-cap" data-seq-cap>
-              <span class="seq-cap-rule" data-seq-rule aria-hidden="true"></span>
-              <p class="seq-cap-meta"><span class="mask"><span class="mline" data-seq-line>Fig. 01 / Our lab</span></span></p>
-              <p class="seq-cap-desc">
-                <span class="mask"><span class="mline" data-seq-line>Every material in the library is received, tested</span></span>
-                <span class="mask"><span class="mline" data-seq-line>and released from our lab in Columbus, Ohio.</span></span>
-              </p>
-            </figcaption>
-          </figure>
+  <div class="lab-stage" data-lab>
+    <div class="lab-bg" aria-hidden="true"></div>
+    <div class="lab-ghost" aria-hidden="true"><span class="lab-ghost-win"><span class="lab-ghost-col" data-lab-ghost><span>01</span><span>02</span><span>03</span><span>04</span></span></span></div>
+    <canvas class="lab-canvas" data-lab-canvas aria-hidden="true"></canvas>
 
-          <figure class="seq-chapter" data-seq-chapter>
-            <div class="seq-mask" data-seq-mask>
-              <div class="seq-media" data-seq-media>
-                <span class="seq-art seq-art--2" data-ph="Photo 02" aria-hidden="true"></span>
-                <img src="assets/img/lab/lab-02.webp" alt="Gloved hand placing sealed vials into a Nuvamin tray" decoding="async" onerror="this.classList.add('is-missing')">
-              </div>
-              <span class="seq-scrim" data-seq-scrim aria-hidden="true"></span>
-              <span class="seq-blade" data-seq-blade aria-hidden="true"></span>
-            </div>
-            <figcaption class="seq-cap" data-seq-cap>
-              <span class="seq-cap-rule" data-seq-rule aria-hidden="true"></span>
-              <p class="seq-cap-meta"><span class="mask"><span class="mline" data-seq-line>Fig. 02 / Filling</span></span></p>
-              <p class="seq-cap-desc">
-                <span class="mask"><span class="mline" data-seq-line>Each lot is filled into the same borosilicate vial,</span></span>
-                <span class="mask"><span class="mline" data-seq-line>then sealed under inert gas and labeled by lot.</span></span>
-              </p>
-            </figcaption>
-          </figure>
+    <div class="lab-ui">
+      <ol class="lab-index" aria-label="Stages">
+        <li><button type="button" data-lab-go="0"><span>01</span>Intake<i></i></button></li>
+        <li><button type="button" data-lab-go="1"><span>02</span>Identity<i></i></button></li>
+        <li><button type="button" data-lab-go="2"><span>03</span>Filling<i></i></button></li>
+        <li><button type="button" data-lab-go="3"><span>04</span>Release<i></i></button></li>
+      </ol>
 
-          <figure class="seq-chapter" data-seq-chapter>
-            <div class="seq-mask" data-seq-mask>
-              <div class="seq-media" data-seq-media>
-                <span class="seq-art seq-art--3" data-ph="Photo 03" aria-hidden="true"></span>
-                <img src="assets/img/lab/lab-03.webp" alt="Scientist pipetting samples at a laboratory bench" decoding="async" onerror="this.classList.add('is-missing')">
-              </div>
-              <span class="seq-scrim" data-seq-scrim aria-hidden="true"></span>
-              <span class="seq-blade" data-seq-blade aria-hidden="true"></span>
-            </div>
-            <figcaption class="seq-cap" data-seq-cap>
-              <span class="seq-cap-rule" data-seq-rule aria-hidden="true"></span>
-              <p class="seq-cap-meta"><span class="mask"><span class="mline" data-seq-line>Fig. 03 / Weighing</span></span></p>
-              <p class="seq-cap-desc">
-                <span class="mask"><span class="mline" data-seq-line>Reference panels are weighed out component by</span></span>
-                <span class="mask"><span class="mline" data-seq-line>component on calibrated microbalances.</span></span>
-              </p>
-            </figcaption>
-          </figure>
+      <div class="lab-steps">
+        <article class="lab-step" data-lab-step>
+          <figure class="lab-photo"><img src="assets/img/lab/lab-01.webp" alt="Open-plan analytical laboratory with scientists at workstations" loading="lazy" decoding="async"></figure>
+          <p class="lab-num">(01) Intake</p>
+          <h3 class="lab-title">Every lot starts in quarantine</h3>
+          <p class="lab-text">Raw material arrives with the supplier&rsquo;s paperwork. We seal it off and hold it until our own tests are done.</p>
+        </article>
+        <article class="lab-step" data-lab-step>
+          <figure class="lab-photo"><img src="assets/img/lab/lab-04.webp" alt="HPLC instrument stack beside sample trays" loading="lazy" decoding="async"></figure>
+          <p class="lab-num">(02) Identity</p>
+          <h3 class="lab-title">We confirm exactly what it is</h3>
+          <p class="lab-text"><sup>1</sup>H-NMR and high-resolution LC-MS check the structure against the reference spectra we keep for every material.</p>
+        </article>
+        <article class="lab-step" data-lab-step>
+          <figure class="lab-photo"><img src="assets/img/lab/lab-03.webp" alt="Scientist pipetting samples at a laboratory bench" loading="lazy" decoding="async"></figure>
+          <p class="lab-num">(03) Filling</p>
+          <h3 class="lab-title">Weighed into one standard vial</h3>
+          <p class="lab-text">Each vial is filled by weight on a calibrated microbalance, then sealed under argon and crimped.</p>
+        </article>
+        <article class="lab-step" data-lab-step>
+          <figure class="lab-photo"><img src="assets/img/lab/lab-02.webp" alt="Gloved hand placing sealed vials into a Nuvamin tray" loading="lazy" decoding="async"></figure>
+          <p class="lab-num">(04) Release</p>
+          <h3 class="lab-title">Released with its evidence</h3>
+          <p class="lab-text">QC reviews the HPLC data and signs the certificate. The lot number on the label links back to it for five years.</p>
+        </article>
+      </div>
 
-          <figure class="seq-chapter" data-seq-chapter>
-            <div class="seq-mask" data-seq-mask>
-              <div class="seq-media" data-seq-media>
-                <span class="seq-art seq-art--4" data-ph="Photo 04" aria-hidden="true"></span>
-                <img src="assets/img/lab/lab-04.webp" alt="HPLC instrument stack beside sample trays" decoding="async" onerror="this.classList.add('is-missing')">
-              </div>
-              <span class="seq-scrim" data-seq-scrim aria-hidden="true"></span>
-              <span class="seq-blade" data-seq-blade aria-hidden="true"></span>
-            </div>
-            <figcaption class="seq-cap" data-seq-cap>
-              <span class="seq-cap-rule" data-seq-rule aria-hidden="true"></span>
-              <p class="seq-cap-meta"><span class="mask"><span class="mline" data-seq-line>Fig. 04 / Release testing</span></span></p>
-              <p class="seq-cap-desc">
-                <span class="mask"><span class="mline" data-seq-line>QC reviews the HPLC, LC-MS and NMR data</span></span>
-                <span class="mask"><span class="mline" data-seq-line>before any lot is released for sale.</span></span>
-              </p>
-            </figcaption>
-          </figure>
+      <aside class="lab-panel" aria-label="Lot record">
+        <div class="lab-ticket">
+          <div><span>Lot</span><b>NM260924-04</b></div>
+          <div><span>Material</span><b>NVM-204</b></div>
+          <p class="lab-status" data-lab-status><i></i><span data-lab-status-text>Released</span></p>
         </div>
 
-        <div class="seq-rail" aria-hidden="true" data-seq-rail>
-          <span class="seq-rail-track" data-seq-track>
-            <span class="seq-rail-thumb" data-seq-thumb></span>
-            <i class="seq-rail-tick" data-seq-tick></i>
-            <i class="seq-rail-tick" data-seq-tick></i>
-            <i class="seq-rail-tick" data-seq-tick></i>
-            <i class="seq-rail-tick" data-seq-tick></i>
-          </span>
-          <span class="seq-rail-count"><span class="seq-count-win"><span class="seq-count-col" data-seq-count><span>01</span><span>02</span><span>03</span><span>04</span></span></span>&thinsp;/&thinsp;04</span>
+        <div class="lab-reads">
+          <section class="lab-read" data-lab-read>
+            <p class="lr-head"><span>Receiving log</span><span>Intake</span></p>
+            <ul class="lr-list">
+              <li class="is-on"><i></i><span>Received</span><b>16 Sep 2026, 08:42</b></li>
+              <li class="is-on"><i></i><span>Containers</span><b>2 of 2 sealed</b></li>
+              <li class="is-on"><i></i><span>Supplier CoA</span><b>On file</b></li>
+              <li class="is-on"><i></i><span>Hold</span><b>Until tested</b></li>
+            </ul>
+          </section>
+
+          <section class="lab-read" data-lab-read>
+            <p class="lr-head"><span><sup>1</sup>H-NMR &middot; 400 MHz &middot; D<sub>2</sub>O</span><span>Identity</span></p>
+            <svg class="lr-chart" viewBox="0 0 300 118" role="img" aria-label="Proton NMR spectrum of ATP">
+              <g class="lr-axis"></g>
+              <path class="lr-fill" data-lab-nmr-fill d=""/>
+              <path class="lr-line" data-lab-nmr pathLength="1" d=""/>
+            </svg>
+            <div class="lr-metrics">
+              <div><span>[M+H]<sup>+</sup></span><b>m/z <em data-lab-count="508.00" data-dec="2">508.00</em></b></div>
+              <div><span>Spectral match</span><b><em data-lab-count="99.2" data-dec="1">99.2</em>%</b></div>
+            </div>
+          </section>
+
+          <section class="lab-read" data-lab-read>
+            <p class="lr-head"><span>Microbalance &middot; &plusmn;0.002 mg</span><span>Filling</span></p>
+            <p class="lr-weight"><em data-lab-count="25.012" data-dec="3">25.012</em><small>mg</small></p>
+            <div class="lr-bar"><i data-lab-fill></i><span>Target 25.000 mg</span></div>
+            <ul class="lr-list">
+              <li class="is-on" data-lab-at="0.72"><i></i><span>Headspace</span><b>Argon</b></li>
+              <li class="is-on" data-lab-at="0.93"><i></i><span>Seal</span><b>Crimped aluminum</b></li>
+            </ul>
+          </section>
+
+          <section class="lab-read" data-lab-read>
+            <p class="lr-head"><span>HPLC-UV &middot; 259 nm</span><span>Release</span></p>
+            <svg class="lr-chart" viewBox="0 0 300 118" role="img" aria-label="HPLC chromatogram showing four peaks: cAMP, AMP, ADP and ATP">
+              <g class="lr-axis"></g>
+              <path class="lr-fill" data-lab-hplc-fill d=""/>
+              <path class="lr-line" data-lab-hplc pathLength="1" d=""/>
+              <g class="lr-peaks"></g>
+            </svg>
+            <div class="lr-metrics lr-metrics-3">
+              <div><span>Purity</span><b><em data-lab-count="99.6" data-dec="1">99.6</em>%</b></div>
+              <div><span>Water (KF)</span><b><em data-lab-count="0.4" data-dec="1">0.4</em>%</b></div>
+              <p class="lr-stamp" data-lab-stamp>Released<small>QC &middot; 24 Sep 2026</small></p>
+            </div>
+          </section>
         </div>
+      </aside>
+
+      <div class="lab-foot" aria-hidden="true">
+        <span class="lab-foot-count">Stage <b data-lab-count-stage>01</b> / 04</span>
+        <span class="lab-foot-bar"><i data-lab-progress></i></span>
+        <span class="lab-foot-hint">Scroll to follow the lot</span>
       </div>
     </div>
+  </div>
 </section>
 
 <!-- ============ THE 2R SYSTEM ============ -->
@@ -289,6 +300,6 @@
 </script>
 <script defer src="assets/js/vendor/gsap.min.js"></script>
 <script defer src="assets/js/vendor/ScrollTrigger.min.js"></script>
-<script defer src="assets/js/lab-sequence.js"></script>
+<script type="module" src="assets/js/lab3d.js"></script>
 </body>
 </html>

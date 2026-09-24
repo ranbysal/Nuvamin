@@ -13,8 +13,23 @@ stored on a server or shipped.
 ## Stack
 
 Static HTML + CSS + vanilla JS. No build step, no backend, no dependencies.
-Self-hosted fonts (Space Grotesk, Fraunces, Inter), GSAP for the pinned
-"Inside the lab" sequence.
+Self-hosted fonts (Space Grotesk, Fraunces, Inter), GSAP ScrollTrigger, and a
+tree-shaken Three.js build (`assets/js/vendor/three.lab.min.js`, rebuilt from
+`tools/three-entry.js`) for the 3D "Inside the lab" scene.
+
+### Inside the lab
+
+`assets/js/lab3d.js` pins homepage section 03 and follows one lot through
+intake, identity, filling and release: a particle cloud in a quarantine cage,
+a real ATP molecule (RDKit coordinates) with a scan ring, a pour into a glass
+2R vial with the cap crimping on, and the label wrapping as the vial spins.
+The side panel shows scroll-driven instrument readouts (NMR, balance, HPLC).
+Three.js loads lazily just before the section is reached. Without WebGL, or
+with reduced motion, the section is a static layout using the lab photos.
+
+The previous version (pinned photo sequence) is kept in
+`backups/inside-the-lab-v1/` with restore steps, and on the git branch
+`backup/inside-the-lab-plate-series`.
 
 ## Pages
 
