@@ -49,19 +49,6 @@
     if (e.persisted) refresh(); // bfcache restore: re-derive pin state from scrollY
   });
 
-  // The access gate (access.js) locks scroll via inline overflow on <html>.
-  // A refresh measured while locked is wrong once the gate closes — defer it.
-  var gatePending = false;
-  new MutationObserver(function () {
-    var locked = document.documentElement.style.overflow === "hidden";
-    if (locked) {
-      gatePending = true;
-    } else if (gatePending) {
-      gatePending = false;
-      requestAnimationFrame(refresh);
-    }
-  }).observe(document.documentElement, { attributes: true, attributeFilter: ["style", "class"] });
-
   /* ------------------------------------------------------------ pinned mode */
 
   var mm = gsap.matchMedia();

@@ -1,98 +1,76 @@
 # Nuvamin
 
-Research-peptide ecommerce storefront. Editorial, minimal, evidence-led —
-with an invoice-first order workflow, manual payment verification, designed
-transactional email and a Google Sheets fulfilment board.
+**Precision materials for biological research** — a concept storefront and design
+study for a fictional life-science materials brand. Reference compounds,
+analytical standards and molecular reagents, every one shipped in the same
+Nuvamin 2R vial and identified by a permanent NVM code.
+
+The store is fully browsable: add materials to the cart, fill in delivery
+details and place an order. Checkout is **simulated** — the order is priced in
+the browser and lands on a confirmation page marked *Mock*. Nothing is charged,
+stored on a server or shipped.
 
 ## Stack
 
-- **Frontend** — static HTML + CSS + vanilla JS. No build step. Self-hosted
-  fonts (Space Grotesk, Fraunces, Inter), real product photography (webp).
-- **Backend** — Node.js (≥20) + Express in `server/`. The active flow creates
-  an awaiting-payment order and emails configurable Zelle, Cash App, PayPal
-  and crypto instructions. Stripe Checkout remains in the codebase behind
-  `CHECKOUT_MODE=stripe`, but is inactive by default.
-- **Order store** — Upstash Redis in production (`ORDER_STORE=redis`), JSON
-  file for local development (`ORDER_STORE=file`).
-
-See [PAYMENTS.md](PAYMENTS.md) for the full payment architecture, order
-lifecycle, and Stripe go-live checklist.
+Static HTML + CSS + vanilla JS. No build step, no backend, no dependencies.
+Self-hosted fonts (Space Grotesk, Fraunces, Inter), GSAP for the pinned
+"Inside the lab" sequence.
 
 ## Pages
 
 | Page | Purpose |
 | --- | --- |
-| `index.html` | Homepage: signature vial hero, featured compounds, verification story |
-| `shop.html` | Full catalogue with category filters |
-| `product.html?id=<id>` | Compound detail: specs, accordions, quantity + add to cart |
-| `about.html` | Standards, process, founder note |
-| `contact.html` | Contact form, FAQ |
-| `cart.html` | Cart + delivery details + **Place order** |
-| `order-placed.html` | Awaiting-payment result page |
-| `confirmation.html` / `failed.html` | Paid confirmation / retained Stripe failure page |
-| `privacy.html` / `terms.html` / `shipping-returns.html` | Privacy, terms of sale, shipping and returns policies |
-| `404.html`, `robots.txt`, `sitemap.xml` | Standard site furniture |
+| `index.html` | Hero vial, featured materials, verification story, lab sequence, the 2R vial system |
+| `shop.html` | The library: family filters (deep-linkable, e.g. `shop.html#analytical`) and a grid / index view |
+| `product.html?id=<id>` | Material detail: key figures, structure drawing, specification, handling, add to cart |
+| `coa.html?id=<id>` | Printable specimen certificate of analysis for the current lot |
+| `cart.html` | Cart, delivery details, discount code (`LOT10`), **Place order** |
+| `confirmation.html` | Mock order confirmation (reads the order from session storage) |
+| `faq.html` | Ordering, grades, certificates, shipping and support |
+| `about.html` / `contact.html` | Company story and standards / contact form |
+| `privacy.html` / `terms.html` / `shipping-returns.html` | Policies |
+| `404.html`, `robots.txt`, `sitemap.xml` | Site furniture |
 
-Product data lives in `assets/js/products.js` (display) and
-`server/catalog.js` (authoritative prices — the server never trusts client
-prices); shared behaviour in `assets/js/main.js`; all styling in
-`assets/css/style.css`.
+## The catalogue
+
+All product data lives in `assets/js/products.js` — five families
+(reference, cellular, molecular, analytical, metabolic), 20 materials. Shared
+behaviour (header, footer, cart store, motion) is in `assets/js/main.js`;
+all styling in `assets/css/style.css`.
+
+Real compounds use their real CAS numbers, formulas and molar masses
+(formulas and masses verified with RDKit). The NVM-1xx+ reference panels,
+lot numbers and certificate results are illustrative.
+
+### Regenerating product imagery
+
+Vial photographs and structure drawings are generated from the catalogue:
+
+```sh
+python3 -m pip install pillow numpy rdkit fonttools brotli
+npm run assets                      # all products
+python3 tools/make-assets.py nad    # just one
+```
+
+`tools/make-assets.py` starts from `tools/vial-blank.png` (the studio vial with
+an empty label), draws the label — family colour band, NVM code, name, format,
+grade, lot and a faint structure — wraps it onto the vial's curvature, and
+writes `assets/img/<id>.webp` plus `assets/img/structures/<id>.svg`.
+
+To add a material: add an entry to `products.js`, add its SMILES to `SMILES`
+in the tool, and run it.
 
 ## Run locally
 
 ```sh
-npm install
-cp .env.example .env      # defaults: CHECKOUT_MODE=invoice, ORDER_STORE=file
-npm start                 # site + API on http://localhost:3000
+npm start        # http://localhost:3000
 ```
 
-Add items → Cart → fill delivery details → Place order. In local development,
-emails and the Sheet row print to the console when those integrations are not
-configured. Stripe/mock testing remains available by setting
-`CHECKOUT_MODE=stripe` and `PAYMENT_PROVIDER=mock`.
+## Deploy
 
-## Deploy on Vercel (production setup)
+Any static host. On Vercel, import the repo with the *Other* preset — the
+included `vercel.json` only enables clean URLs.
 
-The repo is pre-wired to run **entirely on Vercel**: static pages on the CDN,
-the Express API as a serverless function (`api/index.js` + `vercel.json`).
-
-1. **Import the repo** into Vercel (framework preset: *Other*). `vercel.json`
-   already routes `/api/*`, `/checkout/*`, `/admin/*` to the function and
-   serves everything else statically. Server code, order data and configs are
-   never exposed as static files.
-2. **Add the Upstash Redis integration** (Vercel → your project → *Storage* →
-   *Upstash Redis*, free tier). This injects `UPSTASH_REDIS_REST_URL` /
-   `UPSTASH_REDIS_REST_TOKEN` and the app automatically uses Redis for orders.
-   (Without it the API refuses to boot on Vercel — the serverless filesystem
-   can't persist orders.)
-3. **Set environment variables** (Vercel → *Settings* → *Environment Variables*):
-   - `PUBLIC_BASE_URL` — e.g. `https://your-domain.com`
-   - `CHECKOUT_MODE=invoice` (the default)
-   - add manual-payment destination variables later; see `.env.example`
-   - `ADMIN_TOKEN` — long random string protecting `/admin/orders`
-   - `SMTP_HOST/PORT/USER/PASS`, `RECEIPT_FROM`, `SUPPORT_EMAIL` — real receipts
-4. **Connect Google Workspace email + the order sheet** — contact-form
-   delivery, customer receipts from the company address, new-order alerts,
-   and the Google Sheets order log are all env-driven. Copy-paste setup:
-   [GOOGLE-WORKSPACE-SETUP.md](GOOGLE-WORKSPACE-SETUP.md).
-5. **Update the Orders Apps Script** — paste `google/nuvamin-orders.gs`, run
-   `setup()`, and deploy a new version. Invoice ordering fails closed until the
-   server verifies this payment-aware script is active.
-6. **Domain** — `sitemap.xml`, `robots.txt` and the `og:image` meta tags are
-   set to the production domain `https://nuvamin.bio`. Remember to set
-   `PUBLIC_BASE_URL=https://nuvamin.bio` in Vercel so payment return and
-   webhook URLs use it too.
-
-## Before go-live checklist
-
-- [ ] Latest Orders Apps Script deployed and `setup()` run
-- [ ] Payment-instructions email tested (with or without destinations configured)
-- [ ] Payment confirmed checkbox sends one confirmation email
-- [ ] Carrier + tracking + Fulfilled sends the Track Package email
-- [ ] Legal pages (`privacy.html`, `terms.html`, `shipping-returns.html`)
-      reviewed and finalized by counsel
-- [ ] VAT/sales-tax treatment decided and reflected in prices/terms
-- [ ] `sitemap.xml` / `robots.txt` / OG tags updated to the final domain
-- [ ] Strong `ADMIN_TOKEN`; SMTP configured and receipt tested
-
-Palette (Elegant Shadows): `#FFFFFF` · `#B0BEC5` · `#78909C` · `#455A64` · `#000000`
+Palette (Elegant Shadows): `#FFFFFF` · `#B0BEC5` · `#78909C` · `#455A64` · `#000000`,
+plus five muted family bands: sage `#6F8F86`, sand `#B39164`, steel `#5B7593`,
+mauve `#8A7898`, graphite `#22272B`.

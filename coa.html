@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Certificate of Analysis — Nuvamin</title>
+<meta name="description" content="Nuvamin lot certificate of analysis (specimen).">
+<meta name="robots" content="noindex">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23000000'/%3E%3Ctext x='16' y='22' text-anchor='middle' font-family='Arial' font-size='17' fill='%23FFFFFF'%3EN%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body data-page="shop">
+
+<header class="site-header"></header>
+
+<section class="coa-wrap">
+  <div class="wrap">
+    <div class="coa-actions">
+      <a class="section-link" id="coa-back" href="shop.html">&larr; Back to product</a>
+      <button class="btn btn-line" type="button" onclick="window.print()">Print / save as PDF</button>
+    </div>
+    <article class="coa" id="coa"></article>
+  </div>
+</section>
+
+<footer class="site-footer"></footer>
+
+<script src="assets/js/products.js"></script>
+<script src="assets/js/main.js"></script>
+<script>
+  (function () {
+    var p = nvFindProduct(new URLSearchParams(location.search).get("id"));
+    if (!p) { location.replace("shop.html"); return; }
+    var fam = nvFamily(p);
+    document.title = "Certificate of Analysis — " + p.name + " · Lot " + p.lot + " — Nuvamin";
+    document.getElementById("coa-back").href = "product.html?id=" + p.id;
+
+    function spec(k) {
+      for (var i = 0; i < p.specs.length; i++) if (p.specs[i].k === k) return p.specs[i].v;
+      return "";
+    }
+    // Deterministic per-lot "results" so the specimen reads consistently.
+    var seed = 0;
+    for (var i = 0; i < p.lot.length; i++) seed = (seed * 31 + p.lot.charCodeAt(i)) >>> 0;
+    function rnd() { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; }
+
+    // "NM260924-04" → release 2026-09-24
+    var m = /NM(\d\d)(\d\d)(\d\d)/.exec(p.lot);
+    var release = m ? new Date(Date.UTC(2000 + +m[1], +m[2] - 1, +m[3])) : new Date();
+    var ambient = /15–25/.test(spec("Storage"));
+    var retest = new Date(release); retest.setUTCMonth(retest.getUTCMonth() + (ambient ? 36 : 24));
+    function d(dt) { return dt.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "2-digit", timeZone: "UTC" }); }
+
+    var purSpec = (spec("Purity") || spec("Component purity")).replace(/^Each /, "");
+    var floor = parseFloat((/≥\s*([\d.]+)/.exec(purSpec) || [0, 98])[1]);
+    var purResult = Math.min(99.9, floor + 0.3 + rnd() * (99.8 - floor - 0.3)).toFixed(1) + "%";
+    var method = /CAD/.test(purSpec) ? "HPLC-CAD" : "HPLC-UV";
+    var hydrate = /H2O/.test(spec("Molecular formula"));
+    var water = hydrate ? (11.6 + rnd() * 0.8).toFixed(1) + "%" : (0.2 + rnd() * 0.9).toFixed(1) + "%";
+    var waterSpec = hydrate ? "11.0 – 13.0% (monohydrate)" : "≤ 2.0%";
+
+    var rows = [
+      ["Appearance", "Visual", spec("Appearance"), "Conforms"],
+      ["Identity", "<sup>1</sup>H-NMR", "Conforms to structure", "Conforms"],
+      ["Identity", "LC-MS (ESI)", "Mass consistent with structure", "Conforms"],
+      ["Purity", method, purSpec.replace(/\s*\(.*\)/, ""), purResult],
+      ["Water content", "Karl Fischer", waterSpec, water],
+      ["Residual solvents", "GC-HS", "Meets ICH Q3C", "Conforms"]
+    ];
+    if (p.components) {
+      rows.splice(3, 0, ["Composition", "HPLC, gravimetric", spec("Composition"), "Conforms"]);
+    }
+    if (p.grade === "Molecular biology grade") {
+      rows.push(["Nuclease / protease activity", "Fluorogenic assay", "None detected", "None detected"]);
+    }
+
+    var meta = [
+      ["Material", p.components ? p.sub.charAt(0).toUpperCase() + p.sub.slice(1) : p.name], ["NVM code", p.code], [p.components ? "Components" : "CAS", p.components ? p.components.length + "-component panel" : spec("CAS")],
+      ["Lot", p.lot], ["Net content", nvQty(p)], ["Grade", p.grade],
+      ["Release date", d(release)], ["Retest date", d(retest)], ["Storage", spec("Storage")]
+    ];
+    if (!p.components) {
+      meta.splice(3, 0, ["Molecular formula", nvFormula(spec("Molecular formula"))], ["Molar mass", spec("Molar mass")], ["Form", p.form]);
+    }
+
+    document.getElementById("coa").innerHTML =
+      '<div class="coa-top"><div><span class="brand">Nuvamin</span><p>Precision materials for biological research</p></div>' +
+      '<div class="coa-title"><span>' + fam.long + "</span><h1>Certificate of analysis</h1></div></div>" +
+      '<div class="coa-band" style="background:' + fam.color + '"></div>' +
+      '<dl class="coa-meta">' + meta.map(function (r) { return "<div><dt>" + r[0] + "</dt><dd>" + r[1] + "</dd></div>"; }).join("") + "</dl>" +
+      "<h2>Release testing</h2>" +
+      "<table><thead><tr><th>Test</th><th>Method</th><th>Specification</th><th>Result</th></tr></thead><tbody>" +
+      rows.map(function (r) { return "<tr><td>" + r[0] + "</td><td>" + r[1] + "</td><td>" + r[2] + '</td><td class="ok">' + r[3] + "</td></tr>"; }).join("") +
+      "</tbody></table>" +
+      '<div class="coa-foot"><div><p class="coa-sign">A. Marlowe</p>Quality Control &middot; Released ' + d(release) + "</div>" +
+      "<div>This lot meets all release specifications listed above. Results apply only to the lot identified on this certificate.</div></div>" +
+      '<p class="coa-note">Specimen certificate for the Nuvamin concept store. Lot numbers, dates and results are illustrative and generated for demonstration. For research use only &mdash; not for use in diagnostic or therapeutic procedures.</p>';
+  })();
+</script>
+</body>
+</html>

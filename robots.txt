@@ -2,10 +2,6 @@ User-agent: *
 Allow: /
 Disallow: /cart.html
 Disallow: /confirmation.html
-Disallow: /failed.html
-Disallow: /admin/
-Disallow: /api/
-Disallow: /checkout/
-Disallow: /mock-hosted
+Disallow: /coa.html
 
 Sitemap: https://nuvamin.bio/sitemap.xml

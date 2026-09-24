@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Order Confirmed — Nuvamin</title>
-<meta name="description" content="Your Nuvamin order is confirmed.">
+<title>Order Confirmed (Mock) — Nuvamin</title>
+<meta name="description" content="Your mock Nuvamin order is confirmed.">
 <meta name="robots" content="noindex">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23000000'/%3E%3Ctext x='16' y='22' text-anchor='middle' font-family='Arial' font-size='17' fill='%23FFFFFF'%3EN%3C/text%3E%3C/svg%3E">
 <link rel="stylesheet" href="assets/css/style.css">
@@ -19,16 +19,16 @@
       <div class="r-badge" aria-hidden="true">
         <svg viewBox="0 0 24 24" fill="none"><path d="M4 12.5 L10 18 L20 6" stroke="#000" stroke-width="1.8"/></svg>
       </div>
-      <p class="kicker no-rule" style="justify-content:center">Order received</p>
-      <h1 id="r-title">Thank you</h1>
-      <p class="r-sub" id="r-sub">Confirming your payment…</p>
-      <p class="r-status" id="r-status"><span class="r-spin"></span>Awaiting payment confirmation</p>
-      <div class="result-card" id="r-card" hidden></div>
+      <p><span class="r-mock">Mock order</span></p>
+      <h1 id="r-title">Order confirmed</h1>
+      <p class="r-sub" id="r-sub">Thank you &mdash; this is a mock order. No payment was taken and nothing will ship.</p>
       <p class="r-order" id="r-order"></p>
+      <div class="result-card" id="r-card" hidden></div>
       <div class="r-actions">
         <a class="btn" href="shop.html">Continue shopping <span class="arr">&rarr;</span></a>
+        <a class="btn btn-line" href="faq.html">Read the FAQ</a>
       </div>
-      <p class="r-note">A receipt is emailed once payment is confirmed. A certificate of analysis is included with every order.</p>
+      <p class="r-note">Nuvamin is a concept store. This confirmation is a mock &mdash; in the live concept, a receipt and each lot&rsquo;s certificate of analysis would follow by email.</p>
     </div>
   </div>
 </section>
@@ -42,60 +42,49 @@
     var params = new URLSearchParams(location.search);
     var id = params.get("order");
     var card = document.getElementById("r-card");
-    var statusEl = document.getElementById("r-status");
+    var orderEl = document.getElementById("r-order");
     var subEl = document.getElementById("r-sub");
     var titleEl = document.getElementById("r-title");
-    var orderEl = document.getElementById("r-order");
-    if (id) orderEl.textContent = "Order " + id;
 
-    function euro(n) { return "$" + Number(n).toFixed(2); }
-
-    function renderCard(o) {
-      var rows = o.items.map(function (i) {
-        return '<div class="rc-row"><span>' + i.quantity + " × " + i.name + " " + i.mg +
-               '</span><span>' + euro(i.lineTotal) + "</span></div>";
-      }).join("");
-      card.innerHTML = rows +
-        (o.discount ? '<div class="rc-row"><span>Discount' + (o.discountCode ? " (" + o.discountCode + ")" : "") + '</span><span>&minus;' + euro(o.discount) + "</span></div>" : "") +
-        '<div class="rc-row"><span>Shipping</span><span>' + (o.shipping === 0 ? "Free" : euro(o.shipping)) + "</span></div>" +
-        '<div class="rc-row rc-total"><span>Total paid</span><span>' + euro(o.total) + "</span></div>";
-      card.hidden = false;
+    function usd(n) { return "$" + Number(n).toFixed(2); }
+    function esc(v) {
+      return String(v == null ? "" : v).replace(/[&<>"']/g, function (c) {
+        return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+      });
     }
 
-    var tries = 0, maxTries = 20;
-    function poll() {
-      if (!id) { fail("We couldn't find that order."); return; }
-      var apiBase = window.NUVAMIN_API_BASE || "";
-      fetch(apiBase + "/api/orders/" + encodeURIComponent(id)).then(function (r) {
-        if (!r.ok) throw new Error("nf");
-        return r.json();
-      }).then(function (o) {
-        if (o.status === "paid") {
-          statusEl.style.display = "none";
-          subEl.textContent = "Your payment is confirmed.";
-          titleEl.textContent = "Order confirmed";
-          renderCard(o);
-          if (window.nvCart) { try { localStorage.removeItem("nuvamin-cart"); location.hash = ""; } catch (e) {} }
-          document.querySelectorAll("[data-cart-count]").forEach(function (el) { el.textContent = "0"; });
-        } else if (o.status === "failed" || o.status === "cancelled") {
-          location.href = "failed.html?order=" + encodeURIComponent(id);
-        } else if (tries++ < maxTries) {
-          setTimeout(poll, 1500);
-        } else {
-          statusEl.innerHTML = "Payment is still processing. Your emailed receipt will confirm it.";
-          renderCardPendingNote();
-        }
-      }).catch(function () { fail("We couldn't load that order."); });
+    var o = null;
+    try { o = JSON.parse(sessionStorage.getItem("nuvamin-last-order")); } catch (e) {}
+
+    if (!o || (id && o.id !== id)) {
+      titleEl.textContent = "No order found";
+      subEl.textContent = "We couldn't find that mock order in this browser session.";
+      if (id) orderEl.textContent = "Order " + id + " · Mock";
+      return;
     }
-    function renderCardPendingNote() {
-      subEl.textContent = "Your order is being processed.";
-    }
-    function fail(msg) {
-      statusEl.style.display = "none";
-      subEl.textContent = msg;
-      titleEl.textContent = "Hmm";
-    }
-    poll();
+
+    orderEl.textContent = "Order " + o.id + " · Mock";
+    var placed = new Date(o.placedAt);
+    var a = o.address || {};
+    var rows = o.items.map(function (i) {
+      return '<div class="rc-row"><span>' + i.quantity + " × " + esc(i.name) + " " + esc(i.mg) +
+        (i.code && i.code !== i.name ? ' <small style="color:var(--ink-40)">' + esc(i.code) + "</small>" : "") +
+        "</span><span>" + usd(i.lineTotal) + "</span></div>";
+    }).join("");
+    card.innerHTML =
+      '<p class="rc-head">Ship to</p>' +
+      '<p class="rc-addr">' + esc(o.customer && o.customer.name) + "<br>" + esc(a.line1) + (a.line2 ? "<br>" + esc(a.line2) : "") +
+      "<br>" + esc(a.postal) + " " + esc(a.city) + "<br>" + esc(a.country) + "</p>" +
+      '<p class="rc-head">Items</p>' + rows +
+      (o.discount ? '<div class="rc-row"><span>Discount (' + esc(o.discountCode) + ')</span><span>&minus;' + usd(o.discount) + "</span></div>" : "") +
+      '<div class="rc-row"><span>Shipping</span><span>' + (o.shipping === 0 ? "Free" : usd(o.shipping)) + "</span></div>" +
+      '<div class="rc-row rc-total"><span>Total (mock &mdash; not charged)</span><span>' + usd(o.total) + "</span></div>" +
+      '<p class="rc-head" style="margin-top:16px">Placed ' + placed.toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" }) +
+      " &middot; confirmation for " + esc(o.customer && o.customer.email) + "</p>";
+    card.hidden = false;
+
+    try { localStorage.removeItem("nuvamin-cart"); } catch (e) {}
+    document.querySelectorAll("[data-cart-count]").forEach(function (el) { el.textContent = "0"; });
   })();
 </script>
 </body>

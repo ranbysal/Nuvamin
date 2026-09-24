@@ -17,6 +17,7 @@
     '<nav class="nav nav-left">' +
     navLink("shop.html", "Shop", "shop") +
     navLink("about.html", "About", "about") +
+    navLink("faq.html", "FAQ", "faq") +
     "</nav>" +
     '<a class="brand" href="index.html">Nuvamin</a>' +
     '<nav class="nav nav-right">' +
@@ -28,20 +29,21 @@
   var footerHTML =
     '<div class="wrap footer-grid">' +
     '<div class="footer-brand"><span class="brand" style="text-align:left;text-indent:0">Nuvamin</span>' +
-    "<p>Research-grade peptides, independently verified lot by lot. Identity by mass spectrometry, purity by HPLC, certificates published for every batch.</p></div>" +
+    "<p>Precision materials for biological research. Reference compounds, analytical standards and molecular reagents &mdash; every lot characterised, documented and traceable.</p></div>" +
     '<div><h4 class="footer-h">Company</h4><ul>' +
     '<li><a href="about.html">About</a></li>' +
     '<li><a href="contact.html">Contact</a></li>' +
     "</ul></div>" +
     '<div><h4 class="footer-h">Support</h4><ul>' +
-    '<li><a href="contact.html#faq">Certificates of analysis</a></li>' +
+    '<li><a href="faq.html">FAQ</a></li>' +
+    '<li><a href="faq.html#certificates">Certificates of analysis</a></li>' +
     '<li><a href="shipping-returns.html">Shipping &amp; handling</a></li>' +
     '<li><a href="mailto:labs@nuvamin.bio">labs@nuvamin.bio</a></li>' +
     "</ul></div>" +
     "</div>" +
     '<div class="footer-word" aria-hidden="true">Nuvamin</div>' +
-    '<p class="wrap footer-disclaimer">All Nuvamin products are supplied strictly for laboratory research use only. They are not for human or veterinary use, not dietary supplements, and not intended to diagnose, treat, cure, or prevent any disease or condition. By purchasing, you confirm you are a qualified researcher or institution and accept our terms of sale.</p>' +
-    '<div class="footer-base"><span>&copy; 2026 Nuvamin</span><span>Research use only &middot; Verified by independent laboratories</span>' +
+    '<p class="wrap footer-disclaimer">Nuvamin is a concept store and design study. Product listings, lot numbers and analytical data are illustrative, and orders placed on this site are simulated &mdash; nothing is charged or shipped. Within the concept, all materials are for research use only and not for use in diagnostic or therapeutic procedures.</p>' +
+    '<div class="footer-base"><span>&copy; 2026 Nuvamin</span><span>For research use only &middot; Concept store</span>' +
     '<span><a href="privacy.html">Privacy</a> &middot; <a href="terms.html">Terms</a> &middot; <a href="shipping-returns.html">Shipping &amp; returns</a></span></div>';
 
   var headerEl = document.querySelector(".site-header");
@@ -95,9 +97,9 @@
     amb.className = "ambient";
     amb.setAttribute("aria-hidden", "true");
     amb.innerHTML =
-      '<img class="amb-1" src="assets/img/tirzepatide.webp" alt="">' +
-      '<img class="amb-2" src="assets/img/nad.webp" alt="">' +
-      '<img class="amb-3" src="assets/img/bpc-157.webp" alt="">';
+      '<img class="amb-1" src="assets/img/atp.webp" alt="">' +
+      '<img class="amb-2" src="assets/img/nvm-204.webp" alt="">' +
+      '<img class="amb-3" src="assets/img/caffeine.webp" alt="">';
     ambientHost.prepend(amb);
   }
 
@@ -377,69 +379,31 @@
     btn.setAttribute("aria-expanded", open ? "true" : "false");
   });
 
-  /* ---------- newsletter (local) + contact (server) submit ---------- */
+  /* ---------- newsletter + contact (concept store: handled in the browser) ---------- */
+
+  var EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
   document.addEventListener("submit", function (e) {
     var form = e.target;
     if (form.matches("[data-newsletter]")) {
       e.preventDefault();
-      var nbtn = form.querySelector('button[type="submit"], button');
       var input = form.querySelector('input[type="email"]');
-      var addr = input ? input.value.trim() : "";
-      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(addr)) {
+      if (!input || !EMAIL_RE.test(input.value.trim())) {
         toast("Enter a valid email address");
         if (input) input.focus();
         return;
       }
-      if (nbtn) nbtn.disabled = true;
-      var apiBase2 = window.NUVAMIN_API_BASE || "";
-      fetch(apiBase2 + "/api/subscribe", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: addr, source: (document.body.getAttribute("data-page") || "site") + "-newsletter" })
-      }).then(function (res) {
-        return res.json().catch(function () { return {}; }).then(function (body) {
-          if (res.ok) {
-            form.innerHTML = '<p class="news-ok" role="status">Confirmed &mdash; check your inbox for your welcome offer.</p>';
-          } else {
-            toast(body.error || "We couldn't sign you up right now. Please try again.");
-            if (nbtn) nbtn.disabled = false;
-          }
-        });
-      }).catch(function () {
-        toast("We couldn't sign you up right now. Please try again.");
-        if (nbtn) nbtn.disabled = false;
-      });
+      form.innerHTML = '<p class="news-ok" role="status">You&rsquo;re on the list &mdash; lot reports arrive as new materials are released.</p>';
     }
     if (form.matches("[data-contact]")) {
       e.preventDefault();
-      var btn = form.querySelector('button[type="submit"]');
-      var data = {
-        name: (form.name && form.name.value || "").trim(),
-        email: (form.email && form.email.value || "").trim(),
-        institution: (form.institution && form.institution.value || "").trim(),
-        topic: (form.topic && form.topic.value || "").trim(),
-        message: (form.message && form.message.value || "").trim()
-      };
-      if (btn) { btn.disabled = true; btn.textContent = "Sending…"; }
-      var apiBase = window.NUVAMIN_API_BASE || "";
-      fetch(apiBase + "/api/contact", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data)
-      }).then(function (res) {
-        return res.json().catch(function () { return {}; }).then(function (body) {
-          if (res.ok) {
-            form.innerHTML = '<p class="form-ok" role="status">Received &mdash; a member of the lab team replies within one working day.</p>';
-          } else {
-            toast(body.error || "We couldn't send your message. Please email us directly.");
-            if (btn) { btn.disabled = false; btn.innerHTML = 'Send message <span class="arr">&rarr;</span>'; }
-          }
-        });
-      }).catch(function () {
-        toast("We couldn't send your message. Please email us directly.");
-        if (btn) { btn.disabled = false; btn.innerHTML = 'Send message <span class="arr">&rarr;</span>'; }
-      });
+      var name = form.name && form.name.value.trim();
+      var email = form.email && form.email.value.trim();
+      var message = form.message && form.message.value.trim();
+      if (!name) { toast("Enter your name"); form.name.focus(); return; }
+      if (!EMAIL_RE.test(email || "")) { toast("Enter a valid email address"); form.email.focus(); return; }
+      if (!message) { toast("Add a message"); form.message.focus(); return; }
+      form.innerHTML = '<p class="form-ok" role="status">Received &mdash; a member of the lab team replies within one working day.</p>';
     }
   });
 

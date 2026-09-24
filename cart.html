@@ -9,7 +9,7 @@
 <meta property="og:site_name" content="Nuvamin">
 <meta property="og:title" content="Cart — Nuvamin">
 <meta property="og:description" content="Your Nuvamin cart.">
-<meta property="og:image" content="https://nuvamin.bio/assets/img/retatrutide.webp">
+<meta property="og:image" content="https://nuvamin.bio/assets/img/nvm-204.webp">
 <meta name="twitter:card" content="summary">
 <meta name="robots" content="noindex">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23000000'/%3E%3Ctext x='16' y='22' text-anchor='middle' font-family='Arial' font-size='17' fill='%23FFFFFF'%3EN%3C/text%3E%3C/svg%3E">
@@ -37,9 +37,10 @@
 <script>
   (function () {
     var root = document.getElementById("cart-root");
-    var FREE_SHIP = 60, SHIP = 6;
+    var FREE_SHIP = 150, SHIP = 9;
     var CO_KEY = "nuvamin-checkout";
-    var REQ_KEY = "nuvamin-order-request";
+    var ORDER_KEY = "nuvamin-last-order";
+    var CODES = { LOT10: 0.10 };             // demo discount codes
 
     function eur(n) { return "$" + Number(n).toFixed(2); }
 
@@ -66,7 +67,7 @@
         root.innerHTML =
           '<div class="cart-empty' + (firstRender ? ' cart-enter' : '') + '">' +
           "<p>Your cart is empty &mdash; a state of great potential.</p>" +
-          '<a class="btn" href="shop.html">Browse the range <span class="arr">&rarr;</span></a>' +
+          '<a class="btn" href="shop.html">Explore the library <span class="arr">&rarr;</span></a>' +
           "</div>";
         firstRender = false;
         return;
@@ -79,7 +80,7 @@
         return (
           '<div class="cart-line">' +
           '<a class="cart-thumb" href="product.html?id=' + p.id + '">' + nvProductImg(p) + "</a>" +
-          "<div><h3>" + p.name + " " + p.mg + '</h3><p class="sub">' + p.sub + " &middot; " + p.form + '</p>' +
+          "<div><h3>" + p.name + " " + p.mg + '</h3><p class="sub">' + p.code + " &middot; " + p.sub + '</p>' +
           '<button class="remove" data-remove="' + p.id + '" aria-label="Remove ' + p.name + ' ' + p.mg + ' from cart">Remove</button></div>' +
           '<div class="qty"><button data-dec="' + p.id + '" aria-label="Decrease quantity of ' + p.name + '">&minus;</button><output>' + q + '</output><button data-inc="' + p.id + '" aria-label="Increase quantity of ' + p.name + '">+</button></div>' +
           '<span class="cart-line-price">' + eur(p.price * q) + "</span>" +
@@ -113,7 +114,7 @@
         field("co-country", "Country", "country-name") +
         field("co-code", "Discount code", null, { optional: true, placeholder: "e.g. LOT10" }) +
         '<button class="btn" id="checkout">Place order <span class="arr">&rarr;</span></button>' +
-        '<p style="margin-top:16px;font-size:11.5px;color:var(--ink-40)">No payment is collected on this page. After placing your order, payment instructions will be sent to the email above. Certificate of analysis included.</p>' +
+        '<p style="margin-top:16px;font-size:11.5px;color:var(--ink-40)">Demonstration checkout &mdash; no payment is taken and nothing ships. Try the code LOT10 for 10% off.</p>' +
         "</aside></div>";
 
       var saved = readSaved();
@@ -129,29 +130,25 @@
       return el ? el.value.trim() : "";
     }
 
-    function requestId() {
-      var existing = "";
-      try { existing = sessionStorage.getItem(REQ_KEY) || ""; } catch (e) {}
-      if (existing) return existing;
-      var id = window.crypto && typeof window.crypto.randomUUID === "function"
-        ? window.crypto.randomUUID()
-        : "order_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2);
-      try { sessionStorage.setItem(REQ_KEY, id); } catch (e) {}
-      return id;
+    function orderId() {
+      var t = Date.now().toString(36).toUpperCase();
+      var r = Math.random().toString(36).slice(2, 6).toUpperCase();
+      return "NV-" + t.slice(-6) + r;
     }
 
     var busy = false;
     var firstRender = true;
-    async function checkout() {
+    function checkout() {
       if (busy) return;
       var cart = nvCart.read();
-      if (!Object.keys(cart).length) { nvToast("Your cart is empty"); return; }
+      var ids = Object.keys(cart).filter(function (id) { return nvFindProduct(id); });
+      if (!ids.length) { nvToast("Your cart is empty"); return; }
 
       var vals = {
         email: fieldVal("email"), name: fieldVal("name"),
         line1: fieldVal("line1"), line2: fieldVal("line2"),
         postal: fieldVal("postal"), city: fieldVal("city"), country: fieldVal("country"),
-        code: fieldVal("code")
+        code: fieldVal("code").toUpperCase()
       };
       if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(vals.email)) {
         nvToast("Enter a valid email for your receipt");
@@ -166,43 +163,46 @@
           return;
         }
       }
+      if (vals.code && !CODES.hasOwnProperty(vals.code)) {
+        nvToast("That discount code isn't valid");
+        var c = document.getElementById("co-code"); if (c) c.focus();
+        return;
+      }
       try { sessionStorage.setItem(CO_KEY, JSON.stringify(vals)); } catch (e) {}
+
+      var items = ids.map(function (id) {
+        var p = nvFindProduct(id), q = cart[id];
+        return { id: id, code: p.code, name: p.name, mg: p.mg, lot: p.lot, quantity: q, unitPrice: p.price, lineTotal: p.price * q };
+      });
+      var subtotal = items.reduce(function (s, i) { return s + i.lineTotal; }, 0);
+      var discount = vals.code ? Math.round(subtotal * CODES[vals.code] * 100) / 100 : 0;
+      var shipping = subtotal - discount >= FREE_SHIP ? 0 : SHIP;
+      var order = {
+        id: orderId(),
+        mock: true,
+        placedAt: new Date().toISOString(),
+        items: items,
+        subtotal: subtotal,
+        discount: discount,
+        discountCode: discount ? vals.code : "",
+        shipping: shipping,
+        total: Math.round((subtotal - discount + shipping) * 100) / 100,
+        customer: { email: vals.email, name: vals.name },
+        address: { line1: vals.line1, line2: vals.line2, city: vals.city, postal: vals.postal, country: vals.country }
+      };
 
       busy = true;
       var btn = document.getElementById("checkout");
       if (btn) { btn.textContent = "Placing order…"; btn.disabled = true; }
       try {
-        var apiBase = window.NUVAMIN_API_BASE || "";
-        var res = await fetch(apiBase + "/api/checkout", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            cart: cart,
-            customer: { email: vals.email, name: vals.name },
-            shipping: {
-              name: vals.name, line1: vals.line1, line2: vals.line2,
-              city: vals.city, postalCode: vals.postal, country: vals.country
-            },
-            discountCode: vals.code,
-            requestId: requestId()
-          })
-        });
-        var data = await res.json().catch(function () { return {}; });
-        if (res.ok && data.redirectUrl) {
-          try {
-            localStorage.removeItem("nuvamin-cart");
-            sessionStorage.removeItem(CO_KEY);
-            sessionStorage.removeItem(REQ_KEY);
-          } catch (e) {}
-          window.location.href = data.redirectUrl;
-          return;
-        }
-        nvToast(data.error || "We couldn't place your order right now");
-      } catch (err) {
-        nvToast("We couldn't place your order right now");
-      }
-      busy = false;
-      if (btn) { btn.innerHTML = 'Place order <span class="arr">&rarr;</span>'; btn.disabled = false; }
+        sessionStorage.setItem(ORDER_KEY, JSON.stringify(order));
+        localStorage.removeItem("nuvamin-cart");
+        sessionStorage.removeItem(CO_KEY);
+      } catch (e) {}
+      // a short, deliberate beat so the hand-off feels like a real submission
+      setTimeout(function () {
+        window.location.href = "confirmation.html?order=" + encodeURIComponent(order.id);
+      }, 650);
     }
 
     root.addEventListener("click", function (e) {

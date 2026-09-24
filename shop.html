@@ -1,15 +1,15 @@
 <!DOCTYPE html>
-<html lang="en" class="nv-access-pending">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Catalogue — Nuvamin</title>
-<meta name="description" content="The full Nuvamin catalogue of research-grade peptides — receptor agonists, peptide fragments and coenzymes. HPLC-verified, CoA with every lot. Research use only.">
+<title>The Library — Nuvamin</title>
+<meta name="description" content="The Nuvamin molecular library — reference materials, cellular cofactors, molecular reagents, analytical standards and metabolic substrates, every lot characterised.">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Nuvamin">
-<meta property="og:title" content="Catalogue — Nuvamin">
-<meta property="og:description" content="The full Nuvamin catalogue of research-grade peptides — receptor agonists, peptide fragments and coenzymes. HPLC-verified, CoA with every lot. Research use only.">
-<meta property="og:image" content="https://nuvamin.bio/assets/img/retatrutide.webp">
+<meta property="og:title" content="The Library — Nuvamin">
+<meta property="og:description" content="Reference materials, cellular cofactors, molecular reagents, analytical standards and metabolic substrates — one standard vial, every lot characterised.">
+<meta property="og:image" content="https://nuvamin.bio/assets/img/nvm-204.webp">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23000000'/%3E%3Ctext x='16' y='22' text-anchor='middle' font-family='Arial' font-size='17' fill='%23FFFFFF'%3EN%3C/text%3E%3C/svg%3E">
 <link rel="stylesheet" href="assets/css/style.css">
@@ -20,28 +20,37 @@
 
 <section class="page-hero">
   <div class="wrap">
-    <p class="kicker">The catalogue</p>
-    <h1 class="h-display h-xl">All compounds</h1>
-    <p class="lede">A deliberately short list. Every compound is synthesised to reference standard, verified by an independent laboratory, and shipped with the paperwork to prove it. Supplied for research use only.</p>
+    <p class="kicker">The molecular library</p>
+    <h1 class="h-display h-xl">All materials</h1>
+    <p class="lede">A curated collection of materials for the life sciences. Every entry carries an NVM code, ships in the same 2R vial and is characterised lot by lot before release.</p>
   </div>
 </section>
 
 <section class="section" style="padding-top:0">
   <div class="wrap">
     <div class="shop-toolbar">
-      <span class="shop-count" id="shop-count"></span>
+      <div class="filters" role="group" aria-label="Filter by family" id="filters"></div>
+      <div class="shop-side">
+        <span class="shop-count" id="shop-count"></span>
+        <div class="view-toggle" role="group" aria-label="View">
+          <button type="button" data-view="grid" aria-pressed="true">Grid</button>
+          <button type="button" data-view="index" aria-pressed="false">Index</button>
+        </div>
+      </div>
     </div>
+    <p class="fam-intro" id="fam-intro" aria-live="polite"></p>
     <div class="pgrid" id="shop-grid"></div>
+    <div id="shop-index" hidden></div>
   </div>
 </section>
 
 <section class="section dark-band">
   <div class="wrap" style="text-align:center">
     <div class="reveal">
-    <p class="kicker no-rule" style="justify-content:center">Every order, every time</p>
+    <p class="kicker no-rule" style="justify-content:center">Every vial, every lot</p>
     <h2 class="h-display h-lg" style="margin:20px 0 28px">The certificate<br><span class="serif-note" style="color:#B0BEC5">ships with the science.</span></h2>
-    <p class="lede" style="margin:0 auto 36px">Identity by mass spectrometry, purity by HPLC, net content by amino-acid analysis. Look up your lot number online before you even open the box.</p>
-    <a class="btn btn-ghost" href="about.html">How we verify <span class="arr">&rarr;</span></a>
+    <p class="lede" style="margin:0 auto 36px">Identity by NMR and LC-MS, purity by HPLC, water content by Karl Fischer. Open any product and view its certificate before the vial ever leaves the shelf.</p>
+    <a class="btn btn-ghost" href="faq.html#certificates">How we characterise <span class="arr">&rarr;</span></a>
     </div>
   </div>
 </section>
@@ -50,14 +59,105 @@
 
 <script src="assets/js/products.js"></script>
 <script src="assets/js/main.js"></script>
-<script src="assets/js/access.js"></script>
 <script>
   (function () {
     var grid = document.getElementById("shop-grid");
+    var index = document.getElementById("shop-index");
     var count = document.getElementById("shop-count");
-    grid.innerHTML = NV_PRODUCTS.map(function (p, i) { return nvProductCard(p, i); }).join("");
-    count.textContent = NV_PRODUCTS.length + (NV_PRODUCTS.length === 1 ? " compound" : " compounds");
-    nvWatchReveals();
+    var intro = document.getElementById("fam-intro");
+    var filters = document.getElementById("filters");
+    var VIEW_KEY = "nuvamin-shop-view";
+    var state = { family: "all", view: "grid" };
+    try { if (localStorage.getItem(VIEW_KEY) === "index") state.view = "index"; } catch (e) {}
+
+    function countFor(k) {
+      return NV_PRODUCTS.filter(function (p) { return k === "all" || p.family === k; }).length;
+    }
+
+    filters.innerHTML =
+      '<button class="fbtn" data-filter="all">All <span class="fcount">' + NV_PRODUCTS.length + "</span></button>" +
+      Object.keys(NV_FAMILIES).map(function (k) {
+        var f = NV_FAMILIES[k];
+        return '<button class="fbtn" data-filter="' + k + '"><i class="fam-dot" style="background:' + f.color + '"></i>' +
+          f.name + ' <span class="fcount">' + countFor(k) + "</span></button>";
+      }).join("");
+
+    function mw(p) {
+      for (var i = 0; i < p.specs.length; i++) if (p.specs[i].k === "Molar mass") return p.specs[i].v.replace(" g/mol", "");
+      return "&mdash;";
+    }
+    function formula(p) {
+      for (var i = 0; i < p.specs.length; i++) if (p.specs[i].k === "Molecular formula") return nvFormula(p.specs[i].v);
+      return "Panel";
+    }
+    function purity(p) {
+      for (var i = 0; i < p.specs.length; i++) if (/purity/i.test(p.specs[i].k)) return p.specs[i].v.replace(/^Each /, "");
+      return "";
+    }
+
+    function render() {
+      var list = NV_PRODUCTS.filter(function (p) { return state.family === "all" || p.family === state.family; });
+      filters.querySelectorAll(".fbtn").forEach(function (b) {
+        var on = b.getAttribute("data-filter") === state.family;
+        b.classList.toggle("active", on);
+        b.setAttribute("aria-pressed", on ? "true" : "false");
+      });
+      document.querySelectorAll("[data-view]").forEach(function (b) {
+        b.setAttribute("aria-pressed", b.getAttribute("data-view") === state.view ? "true" : "false");
+      });
+      count.textContent = list.length + (list.length === 1 ? " material" : " materials");
+      var fam = NV_FAMILIES[state.family];
+      intro.innerHTML = fam ? "<b>" + fam.long + "</b><span>" + fam.blurb + "</span>" : "";
+
+      if (state.view === "grid") {
+        index.hidden = true;
+        grid.hidden = false;
+        grid.innerHTML = list.map(function (p, i) { return nvProductCard(p, i); }).join("");
+        nvWatchReveals();
+      } else {
+        grid.hidden = true;
+        index.hidden = false;
+        index.innerHTML =
+          '<table class="lib-index"><thead><tr>' +
+          '<th>Code</th><th>Material</th><th class="li-hide-md">Class</th><th class="li-hide-sm">Formula</th>' +
+          '<th class="li-hide-sm">MW</th><th class="li-hide-md">Purity</th><th class="li-hide-sm">Format</th><th>Price</th><th class="li-add"><span style="position:absolute;left:-9999px">Add</span></th>' +
+          "</tr></thead><tbody>" +
+          list.map(function (p) {
+            var f = nvFamily(p);
+            return "<tr>" +
+              '<td class="li-code"><i class="fam-dot" style="background:' + f.color + '"></i>' + p.code + "</td>" +
+              '<td class="li-name"><a href="product.html?id=' + p.id + '">' + p.name + "</a><small>" + p.sub + "</small></td>" +
+              '<td class="li-hide-md">' + f.long + "</td>" +
+              '<td class="li-num li-hide-sm">' + formula(p) + "</td>" +
+              '<td class="li-num li-hide-sm">' + mw(p) + "</td>" +
+              '<td class="li-num li-hide-md">' + purity(p) + "</td>" +
+              '<td class="li-num li-hide-sm">' + nvQty(p) + "</td>" +
+              '<td class="li-price">$' + p.price.toFixed(2) + "</td>" +
+              '<td class="li-add"><button type="button" data-add="' + p.id + '" aria-label="Add ' + p.name + ' to cart">Add</button></td>' +
+              "</tr>";
+          }).join("") +
+          "</tbody></table>";
+      }
+    }
+
+    filters.addEventListener("click", function (e) {
+      var b = e.target.closest(".fbtn");
+      if (!b) return;
+      state.family = b.getAttribute("data-filter");
+      history.replaceState(null, "", state.family === "all" ? location.pathname : "#" + state.family);
+      render();
+    });
+    document.querySelectorAll("[data-view]").forEach(function (b) {
+      b.addEventListener("click", function () {
+        state.view = b.getAttribute("data-view");
+        try { localStorage.setItem(VIEW_KEY, state.view); } catch (e) {}
+        render();
+      });
+    });
+
+    var hash = (location.hash || "").replace("#", "");
+    if (NV_FAMILIES[hash]) state.family = hash;
+    render();
   })();
 </script>
 </body>

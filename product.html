@@ -1,15 +1,15 @@
 <!DOCTYPE html>
-<html lang="en" class="nv-access-pending">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Compound — Nuvamin</title>
-<meta name="description" content="Nuvamin research compound — full analytical specification, certificate of analysis, and handling guidance. Research use only.">
+<title>Material — Nuvamin</title>
+<meta name="description" content="Nuvamin material — structure, full analytical specification, lot certificate and handling guidance.">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Nuvamin">
-<meta property="og:title" content="Compound — Nuvamin">
-<meta property="og:description" content="Nuvamin research compound — full analytical specification, certificate of analysis, and handling guidance. Research use only.">
-<meta property="og:image" content="https://nuvamin.bio/assets/img/retatrutide.webp">
+<meta property="og:title" content="Material — Nuvamin">
+<meta property="og:description" content="Nuvamin material — structure, full analytical specification, lot certificate and handling guidance.">
+<meta property="og:image" content="https://nuvamin.bio/assets/img/nvm-204.webp">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23000000'/%3E%3Ctext x='16' y='22' text-anchor='middle' font-family='Arial' font-size='17' fill='%23FFFFFF'%3EN%3C/text%3E%3C/svg%3E">
 <link rel="stylesheet" href="assets/css/style.css">
@@ -24,8 +24,8 @@
   <div class="wrap">
     <div class="section-head reveal">
       <div>
-        <p class="kicker">Related compounds</p>
-        <h2 class="h-display h-md">Explore the catalogue</h2>
+        <p class="kicker">From the same family</p>
+        <h2 class="h-display h-md">Explore the library</h2>
       </div>
       <a class="section-link" href="shop.html">View all</a>
     </div>
@@ -37,47 +37,78 @@
 
 <script src="assets/js/products.js"></script>
 <script src="assets/js/main.js"></script>
-<script src="assets/js/access.js"></script>
 <script>
   (function () {
     var params = new URLSearchParams(location.search);
     var requestedId = params.get("id");
-    // No id → default to the flagship compound; an id that doesn't exist →
-    // back to the catalogue rather than a half-broken page.
+    // No id → default to the flagship material; an id that doesn't exist →
+    // back to the library rather than a half-broken page.
     var p = requestedId ? nvFindProduct(requestedId) : NV_PRODUCTS[0];
     if (!p) { location.replace("shop.html"); return; }
-    document.title = p.name + " " + p.mg + " — Nuvamin";
+    var fam = nvFamily(p);
+    document.title = p.name + " " + nvQty(p) + " — Nuvamin";
 
     var qty = 1;
+    function spec(k) {
+      for (var i = 0; i < p.specs.length; i++) if (p.specs[i].k === k) return p.specs[i].v;
+      return "";
+    }
 
     var specRows = p.specs.map(function (s) {
-      return "<tr><td>" + s.k + "</td><td>" + s.v + "</td></tr>";
-    }).join("");
+      var v = s.k === "Molecular formula" ? nvFormula(s.v) : s.v;
+      return "<tr><td>" + s.k + "</td><td>" + v + "</td></tr>";
+    }).join("") +
+      "<tr><td>NVM code</td><td>" + p.code + "</td></tr>" +
+      "<tr><td>Current lot</td><td>" + p.lot + "</td></tr>";
 
     var research = p.research.map(function (b) { return "<li>" + b + "</li>"; }).join("");
+
+    var figs = p.components
+      ? [["Components", String(p.components.length)], ["Purity", spec("Component purity").replace(/^Each /, "")], ["Format", nvQty(p) + " · 2R vial"], ["Lot", p.lot]]
+      : [["Purity", spec("Purity")], ["Molar mass", spec("Molar mass")], ["CAS", spec("CAS")], ["Lot", p.lot]];
+    var figHTML = '<dl class="pdp-figs">' + figs.map(function (f) {
+      return '<div class="pdp-fig"><dt>' + f[0] + "</dt><dd>" + f[1] + "</dd></div>";
+    }).join("") + "</dl>";
+
+    var structCap = p.components
+      ? "<span>" + p.components.length + "-component panel</span><span>" + spec("Composition").split(",")[1] + "</span>"
+      : "<span>" + nvFormula(spec("Molecular formula")) + "</span><span>" + spec("Molar mass") + "</span>";
+
+    var components = p.components
+      ? '<div class="acc-item"><button class="acc-btn" aria-expanded="false">Panel composition <span class="acc-x">+</span></button><div class="acc-panel"><div class="acc-body"><ul class="pdp-components">' +
+        p.components.map(function (c) { return "<li>" + c + "</li>"; }).join("") +
+        "</ul><p style=\"margin-top:12px\">" + spec("Composition") + ". Components are weighed individually on a calibrated microbalance and co-packaged in a single vial.</p></div></div></div>"
+      : "";
+
+    var cold = /−20/.test(spec("Storage"));
 
     document.getElementById("pdp").innerHTML =
       '<div class="pdp-media-col" style="background:' + p.panel + '"><div class="pdp-media">' + nvProductImg(p) + "</div></div>" +
       '<div class="pdp-info">' +
-      '<p class="pdp-cat">' + p.mg + " &middot; " + p.form + "</p>" +
+      '<p class="pdp-cat"><i class="fam-dot" style="background:' + fam.color + ';margin-right:10px;vertical-align:1px"></i>' + p.code + " &middot; " + fam.long + "</p>" +
       '<h1 class="h-display pdp-title">' + p.name + "</h1>" +
       '<p class="pdp-sub">' + p.sub + "</p>" +
       '<p class="pdp-price">$' + p.price.toFixed(2) + '</p>' +
-      '<p class="pdp-form">' + p.mg + " per vial &middot; " + p.form + "</p>" +
+      '<p class="pdp-form">' + nvQty(p) + " &middot; " + p.form + " &middot; " + p.grade + "</p>" +
       '<p class="pdp-blurb">' + p.blurb + "</p>" +
-      '<p class="pdp-context">Research application</p>' +
+      figHTML +
+      '<p class="pdp-context">Applications</p>' +
       '<ul class="pdp-research">' + research + "</ul>" +
       '<div class="pdp-buy">' +
       '<div class="qty"><button type="button" data-q="-1" aria-label="Decrease quantity">&minus;</button><output id="qty-out">1</output><button type="button" data-q="1" aria-label="Increase quantity">+</button></div>' +
       '<button class="btn" id="pdp-add">Add to cart &mdash; $<span id="pdp-total">' + p.price.toFixed(2) + "</span></button>" +
       "</div>" +
-      '<p class="pdp-ship"><span>Free shipping over $60</span><span>Cold-chain dispatch</span><span>CoA included</span><span>Lot lookup online</span></p>' +
-      '<p class="pdp-ruo">For laboratory research use only. Not for human or veterinary use.</p>' +
+      '<p class="pdp-ship"><span>Free shipping over $150</span><span>' + (cold ? "Cold-pack dispatch" : "Ambient dispatch") + '</span><span>Certificate included</span><span>Lot ' + p.lot + "</span></p>" +
+      '<p class="pdp-ruo">For research use only. Not for use in diagnostic or therapeutic procedures.</p>' +
+      '<figure class="pdp-struct"><img src="assets/img/structures/' + p.id + '.svg" alt="Chemical structure of ' + p.name + '" loading="lazy">' +
+      "<figcaption>" + structCap + "</figcaption></figure>" +
       '<div class="acc">' +
       '<div class="acc-item"><button class="acc-btn" aria-expanded="false">Analytical specification <span class="acc-x">+</span></button><div class="acc-panel"><div class="acc-body"><table>' + specRows + "</table></div></div></div>" +
-      '<div class="acc-item"><button class="acc-btn" aria-expanded="false">Certificate of analysis <span class="acc-x">+</span></button><div class="acc-panel"><div class="acc-body"><p>Each lot of ' + p.name + " ships with a certificate of analysis confirming identity by mass spectrometry and purity by HPLC, alongside net-content, endotoxin and bioburden results. Every certificate is archived online for five years and is searchable by lot number printed on the vial.</p></div></div></div>" +
-      '<div class="acc-item"><button class="acc-btn" aria-expanded="false">Handling &amp; reconstitution <span class="acc-x">+</span></button><div class="acc-panel"><div class="acc-body"><p>Supplied lyophilised. Store sealed at &minus;20&nbsp;&deg;C, desiccated and protected from light. Allow the vial to reach room temperature before opening to avoid condensation. Reconstitution volumes and buffers depend on your study design &mdash; handling is the responsibility of the qualified researcher.</p></div></div></div>' +
-      '<div class="acc-item"><button class="acc-btn" aria-expanded="false">Shipping &amp; cold chain <span class="acc-x">+</span></button><div class="acc-panel"><div class="acc-body"><p>Prepared for dispatch within one to two business days, packed on dry ice or gel packs as stability requires. Tracked service is available across eligible destinations in North America and Europe. Because these are temperature-sensitive research materials, sales are final; issues involving damaged, incorrect or non-conforming shipments are reviewed individually under our Shipping &amp; Returns policy.</p></div></div></div>' +
+      components +
+      '<div class="acc-item"><button class="acc-btn" aria-expanded="false">Certificate of analysis <span class="acc-x">+</span></button><div class="acc-panel"><div class="acc-body"><p>Lot ' + p.lot + " of " + p.name + " was released after identity confirmation by <sup>1</sup>H-NMR and LC-MS, purity by " + (/CAD/.test(spec("Purity")) ? "HPLC with charged-aerosol detection" : "HPLC-UV") + ", and water content by Karl Fischer titration. The certificate travels with every vial and is archived for five years under its lot number.</p>" +
+      '<p style="margin-top:14px"><a class="inline-link" href="coa.html?id=' + p.id + '">View the certificate for lot ' + p.lot + " &rarr;</a></p></div></div></div>" +
+      '<div class="acc-item"><button class="acc-btn" aria-expanded="false">Handling &amp; storage <span class="acc-x">+</span></button><div class="acc-panel"><div class="acc-body"><p>Store the sealed vial at ' + spec("Storage") + ". " + (cold ? "Allow the vial to reach room temperature before opening to avoid condensation on the material. " : "") + "Solubility: " + spec("Solubility").charAt(0).toLowerCase() + spec("Solubility").slice(1) + ". Prepare solutions fresh where possible; concentrations and buffers depend on your method and remain the responsibility of the researcher.</p></div></div></div>" +
+      '<div class="acc-item"><button class="acc-btn" aria-expanded="false">Shipping <span class="acc-x">+</span></button><div class="acc-panel"><div class="acc-body"><p>Prepared for dispatch within one to two business days. ' + (cold ? "This material ships on cold packs in an insulated shipper." : "This material is stable at ambient temperature and ships in standard protective packaging.") + " Tracked service across eligible destinations in North America and Europe. See our Shipping &amp; Returns policy for detail.</p></div></div></div>" +
       "</div></div>";
 
     function syncQty() {
@@ -96,7 +127,7 @@
 
     var related = NV_PRODUCTS.filter(function (x) { return x.id !== p.id; })
       .sort(function (a, b) {
-        return (b.category === p.category) - (a.category === p.category);
+        return (b.family === p.family) - (a.family === p.family);
       })
       .slice(0, 3);
     document.getElementById("related-grid").innerHTML =
